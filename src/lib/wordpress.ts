@@ -1,4 +1,5 @@
 import { WPPostSummary } from '@/types';
+import { getPreviewImage } from '@/lib/imageStore';
 
 export function getWpAuthHeaders(username?: string, appPassword?: string) {
   const user = username || process.env.WORDPRESS_USERNAME || '';
@@ -139,12 +140,50 @@ export async function uploadImageToWordPress({
   let contentType = 'image/png';
   let extension = 'png';
 
-  if (imageUrl.includes('/api/image-proxy?id=')) {
-    const id = imageUrl.split('/api/image-proxy?id=')[1]?.trim();
-    const { getPreviewImage } = await import('@/lib/imageStore');
-    const dataUrl = id ? getPreviewImage(id) : null;
-    if (dataUrl) {
-      imageUrl = dataUrl;
+  // If imageUrl is our local image-proxy URL (e.g. /api/image-proxy?id=img_...)
+  if (imageUrl.includes('image-proxy') || imageUrl.includes('img_')) {
+    const idMatch = imageUrl.match(/(img_[0-9]+_[a-zA-Z0-9]+)/);
+    if (idMatch) {
+      const storedData = getPreviewImage(idMatch[1]);
+      if (storedData) {
+        imageUrl = storedData;
+      }
+    }
+  }
+
+  // If still relative URL, try to prepend localhost or base URL
+  if (imageUrl.startsWith('/')) {
+    const localUrl = `http://localhost:3000${imageUrl}`;
+    try {
+      const res = await fetch(localUrl);
+      if (res.ok) {
+        const arrayBuffer = await res.arrayBuffer();
+        buffer = Buffer.from(arrayBuffer);
+        contentType = res.headers.get('content-type') || 'image/png';
+        extension = contentType.includes('png') ? 'png' : 'jpg';
+        const cleanFilename = filename.endsWith(`.${extension}`) ? filename : `${filename}.${extension}`;
+        const uploadEndpoint = `${baseUrl}/wp-json/wp/v2/media`;
+        const uploadRes = await fetch(uploadEndpoint, {
+          method: 'POST',
+          headers: {
+            ...authHeaders,
+            'Content-Disposition': `attachment; filename="${cleanFilename}"`,
+            'Content-Type': contentType,
+          },
+          body: new Uint8Array(buffer),
+        });
+        if (!uploadRes.ok) {
+          const errBody = await uploadRes.text();
+          throw new Error(`Failed to upload media to WordPress (${uploadRes.status}): ${errBody}`);
+        }
+        const mediaData = await uploadRes.json();
+        return {
+          id: mediaData.id,
+          sourceUrl: mediaData.source_url || mediaData.guid?.rendered || imageUrl,
+        };
+      }
+    } catch (e) {
+      console.warn('Could not fetch relative image via localhost:', e);
     }
   }
 

@@ -84,12 +84,13 @@ Generate the complete outline, semantic keywords, and 3000-4000 character in-dep
 }`;
 
   const response = await openai.chat.completions.create({
-    model: 'gpt-4o',
+    model: 'gpt-4o-mini',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },
     ],
     temperature: 0.7,
+    max_tokens: 6000,
     response_format: { type: 'json_object' },
   });
 
