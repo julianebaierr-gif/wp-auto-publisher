@@ -304,7 +304,8 @@ export default function Home() {
     }
   };
 
-  // Handle Bulk Generation
+  // Handle Bulk Generation - SERVER-SIDE BACKGROUND QUEUE
+  // Browser can be safely closed after starting - server processes independently
   const handleBulkPublish = async () => {
     const list = bulkKeywords
       .split('\n')
@@ -316,66 +317,119 @@ export default function Home() {
     setIsBulkRunning(true);
     setBulkProgress({ total: list.length, current: 0, logs: [] });
 
-    const now = new Date();
+    try {
+      // Send ALL keywords to server in ONE request - server handles everything in background
+      const res = await fetch('/api/bulk-queue/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          keywords: list,
+          intervalHours: bulkIntervalHours,
+          settings: {
+            ...settings,
+            publishStatus: bulkIntervalHours > 0 ? 'future' : settings.publishStatus,
+          },
+        }),
+      });
 
-    for (let i = 0; i < list.length; i++) {
-      const kw = list[i];
-      setBulkProgress((prev) => ({ ...prev, current: i + 1 }));
-
-      // Calculate schedule date: 1st immediately or staggered every 8 hours
-      let scheduleDateStr: string | undefined = undefined;
-      if (bulkIntervalHours > 0) {
-        const scheduledTime = new Date(now.getTime() + i * bulkIntervalHours * 60 * 60 * 1000);
-        // Format ISO string without milliseconds: YYYY-MM-DDTHH:mm:ss
-        scheduleDateStr = scheduledTime.toISOString().replace(/\.\d{3}Z$/, '');
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to start background queue');
       }
 
+      // Start polling for status updates
+      pollBulkStatus();
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Error starting bulk queue');
+      setIsBulkRunning(false);
+    }
+  };
+
+  // Poll server for background queue status
+  const pollBulkStatus = () => {
+    const intervalId = setInterval(async () => {
       try {
-        const res = await fetch('/api/generate-and-publish', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            keyword: kw,
-            scheduleDate: scheduleDateStr,
-            settings: {
-              ...settings,
-              publishStatus: scheduleDateStr ? 'future' : settings.publishStatus,
-            },
-          }),
-        });
+        const res = await fetch('/api/bulk-queue/status');
         const data = await res.json();
 
-        setBulkProgress((prev) => ({
-          ...prev,
-          logs: [
-            ...prev.logs,
-            {
-              keyword: kw,
-              success: res.ok && !data.error,
-              url: data.postUrl,
-              error: data.error,
-              title: data.article?.title,
-              scheduledAt: scheduleDateStr ? new Date(scheduleDateStr).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }) : '立即发布',
-            },
-          ],
-        }));
-      } catch (err: any) {
-        setBulkProgress((prev) => ({
-          ...prev,
-          logs: [
-            ...prev.logs,
-            {
-              keyword: kw,
-              success: false,
-              error: err.message,
-            },
-          ],
-        }));
-      }
-    }
+        const completedCount = data.completed || 0;
+        const failedCount = data.failed || 0;
+        const currentProcessing = data.currentItem || '';
 
-    setIsBulkRunning(false);
+        setBulkProgress({
+          total: data.total || 0,
+          current: completedCount + failedCount,
+          logs: (data.items || [])
+            .filter((item: any) => item.status === 'completed' || item.status === 'failed')
+            .map((item: any) => ({
+              keyword: item.keyword,
+              success: item.status === 'completed',
+              url: item.postUrl,
+              error: item.error,
+              title: item.title,
+              scheduledAt: item.scheduleDate
+                ? new Date(item.scheduleDate).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
+                : '立即发布',
+            })),
+        });
+
+        // If queue is done, stop polling
+        if (!data.isRunning) {
+          clearInterval(intervalId);
+          setIsBulkRunning(false);
+        }
+      } catch {
+        // Network error during polling is fine - server is still working
+      }
+    }, 10000); // Poll every 10 seconds
+
+    // Store interval ID to allow cleanup
+    return () => clearInterval(intervalId);
   };
+
+  // Stop background queue
+  const handleStopBulkQueue = async () => {
+    try {
+      await fetch('/api/bulk-queue/stop', { method: 'POST' });
+      setIsBulkRunning(false);
+    } catch {
+      // ignore
+    }
+  };
+
+  // On page load, check if there's an active background queue
+  useEffect(() => {
+    const checkExistingQueue = async () => {
+      try {
+        const res = await fetch('/api/bulk-queue/status');
+        const data = await res.json();
+        if (data.isRunning) {
+          setIsBulkRunning(true);
+          setBulkProgress({
+            total: data.total || 0,
+            current: (data.completed || 0) + (data.failed || 0),
+            logs: (data.items || [])
+              .filter((item: any) => item.status === 'completed' || item.status === 'failed')
+              .map((item: any) => ({
+                keyword: item.keyword,
+                success: item.status === 'completed',
+                url: item.postUrl,
+                error: item.error,
+                title: item.title,
+                scheduledAt: item.scheduleDate
+                  ? new Date(item.scheduleDate).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
+                  : '立即发布',
+              })),
+          });
+          pollBulkStatus();
+          setActiveTab('bulk');
+        }
+      } catch {
+        // API not available yet
+      }
+    };
+    checkExistingQueue();
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-emerald-500 selection:text-white">
@@ -948,7 +1002,7 @@ export default function Home() {
                     {isBulkRunning ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        批量排期中 ({bulkProgress.current} / {bulkProgress.total})...
+                        服务器后台运行中 ({bulkProgress.current} / {bulkProgress.total})...
                       </>
                     ) : (
                       <>
@@ -959,6 +1013,33 @@ export default function Home() {
                   </button>
                 </div>
               </div>
+
+              {/* Server-side background queue indicator */}
+              {isBulkRunning && (
+                <div className="mt-4 p-4 rounded-xl bg-emerald-950/30 border border-emerald-500/30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
+                      <div>
+                        <p className="text-sm font-semibold text-emerald-300">
+                          ✅ 服务器后台处理中 - 可安全关闭浏览器
+                        </p>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          Server is processing in the background. You can safely close this tab - articles will continue to be generated and scheduled.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleStopBulkQueue}
+                      className="flex items-center gap-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer"
+                    >
+                      <XCircle className="w-3.5 h-3.5" />
+                      停止队列
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Bulk Execution Logs */}
