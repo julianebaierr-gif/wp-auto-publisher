@@ -49,13 +49,13 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
-    // Save image to server memory store and get lightweight proxy URL
+    // Save image to server memory store and disk
     const { savePreviewImage } = await import('@/lib/imageStore');
-    const featuredImgId = savePreviewImage(rawFeaturedImage);
-    const inArticleImgId = savePreviewImage(rawInArticleImage);
+    const featuredImgId = await savePreviewImage(rawFeaturedImage);
+    const inArticleImgId = await savePreviewImage(rawInArticleImage);
 
-    const featuredImageUrl = `/api/image-proxy?id=${featuredImgId}`;
-    const inArticleImageUrl = `/api/image-proxy?id=${inArticleImgId}`;
+    const featuredImageUrl = `/temp_images/${featuredImgId}.png`;
+    const inArticleImageUrl = `/temp_images/${inArticleImgId}.png`;
 
     // Construct preview content with in-article image preview
     const inArticleImageHtml = `

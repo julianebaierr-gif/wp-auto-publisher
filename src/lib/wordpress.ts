@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { WPPostSummary } from '@/types';
 import { getPreviewImage } from '@/lib/imageStore';
 
@@ -136,76 +138,69 @@ export async function uploadImageToWordPress({
   const baseUrl = getWpBaseUrl(wpUrl);
   const authHeaders = getWpAuthHeaders(username, appPassword);
 
-  let buffer: Buffer;
+  let buffer: Buffer | null = null;
   let contentType = 'image/png';
   let extension = 'png';
 
-  // If imageUrl is our local image-proxy URL (e.g. /api/image-proxy?id=img_...)
-  if (imageUrl.includes('image-proxy') || imageUrl.includes('img_')) {
+  // If imageUrl is our local image path or proxy (e.g. /temp_images/img_... or /api/image-proxy?id=img_...)
+  if (imageUrl.includes('temp_images') || imageUrl.includes('image-proxy') || imageUrl.includes('img_')) {
     const idMatch = imageUrl.match(/(img_[0-9]+_[a-zA-Z0-9]+)/);
     if (idMatch) {
-      const storedData = getPreviewImage(idMatch[1]);
-      if (storedData) {
-        imageUrl = storedData;
-      }
-    }
-  }
-
-  // If still relative URL, try to prepend localhost or base URL
-  if (imageUrl.startsWith('/')) {
-    const localUrl = `http://localhost:3000${imageUrl}`;
-    try {
-      const res = await fetch(localUrl);
-      if (res.ok) {
-        const arrayBuffer = await res.arrayBuffer();
-        buffer = Buffer.from(arrayBuffer);
-        contentType = res.headers.get('content-type') || 'image/png';
-        extension = contentType.includes('png') ? 'png' : 'jpg';
-        const cleanFilename = filename.endsWith(`.${extension}`) ? filename : `${filename}.${extension}`;
-        const uploadEndpoint = `${baseUrl}/wp-json/wp/v2/media`;
-        const uploadRes = await fetch(uploadEndpoint, {
-          method: 'POST',
-          headers: {
-            ...authHeaders,
-            'Content-Disposition': `attachment; filename="${cleanFilename}"`,
-            'Content-Type': contentType,
-          },
-          body: new Uint8Array(buffer),
-        });
-        if (!uploadRes.ok) {
-          const errBody = await uploadRes.text();
-          throw new Error(`Failed to upload media to WordPress (${uploadRes.status}): ${errBody}`);
+      const cleanId = idMatch[1];
+      const localFilePath = path.join(process.cwd(), 'public', 'temp_images', `${cleanId}.png`);
+      if (fs.existsSync(localFilePath)) {
+        buffer = fs.readFileSync(localFilePath);
+        contentType = 'image/png';
+        extension = 'png';
+      } else {
+        const storedData = getPreviewImage(cleanId);
+        if (storedData) {
+          imageUrl = storedData;
         }
-        const mediaData = await uploadRes.json();
-        return {
-          id: mediaData.id,
-          sourceUrl: mediaData.source_url || mediaData.guid?.rendered || imageUrl,
-        };
       }
-    } catch (e) {
-      console.warn('Could not fetch relative image via localhost:', e);
     }
   }
 
-  if (imageUrl.startsWith('data:')) {
-    const matches = imageUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-    if (matches && matches.length === 3) {
-      contentType = matches[1];
-      extension = contentType.includes('png') ? 'png' : 'jpg';
-      buffer = Buffer.from(matches[2], 'base64');
+  // If buffer was loaded directly from local file
+  if (!buffer!) {
+    if (imageUrl.startsWith('data:')) {
+      const matches = imageUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        contentType = matches[1];
+        extension = contentType.includes('png') ? 'png' : 'jpg';
+        buffer = Buffer.from(matches[2], 'base64');
+      } else {
+        throw new Error('Invalid base64 data URI');
+      }
+    } else if (imageUrl.startsWith('/')) {
+      const localUrl = `http://localhost:3000${imageUrl}`;
+      try {
+        const res = await fetch(localUrl);
+        if (res.ok) {
+          const arrayBuffer = await res.arrayBuffer();
+          buffer = Buffer.from(arrayBuffer);
+          contentType = res.headers.get('content-type') || 'image/png';
+          extension = contentType.includes('png') ? 'png' : 'jpg';
+        }
+      } catch (e) {
+        console.warn('Could not fetch relative image via localhost:', e);
+      }
     } else {
-      throw new Error('Invalid base64 data URI');
+      // Download image from remote URL
+      const imageRes = await fetch(imageUrl);
+      if (!imageRes.ok) {
+        throw new Error(`Failed to download generated image: ${imageRes.statusText}`);
+      }
+      contentType = imageRes.headers.get('content-type') || 'image/jpeg';
+      extension = contentType.includes('png') ? 'png' : 'jpg';
+      const arrayBuffer = await imageRes.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
     }
-  } else {
-    // Download image from URL
-    const imageRes = await fetch(imageUrl);
-    if (!imageRes.ok) {
-      throw new Error(`Failed to download generated image: ${imageRes.statusText}`);
-    }
-    contentType = imageRes.headers.get('content-type') || 'image/jpeg';
-    extension = contentType.includes('png') ? 'png' : 'jpg';
-    const arrayBuffer = await imageRes.arrayBuffer();
-    buffer = Buffer.from(arrayBuffer);
+  }
+
+
+  if (!buffer) {
+    throw new Error(`Failed to load image buffer for upload: ${imageUrl}`);
   }
 
   const cleanFilename = filename.endsWith(`.${extension}`) ? filename : `${filename}.${extension}`;
