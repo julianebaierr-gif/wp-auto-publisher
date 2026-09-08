@@ -155,6 +155,26 @@ Generate the complete 10,000+ Chinese character master guide in JSON format:
     '$1'
   );
 
+  // Remove any early placeholder from model output
+  finalContentHtml = finalContentHtml.replace(/<!--\s*IN_ARTICLE_IMAGE_HERE\s*-->/g, '');
+
+  // Calculate strict midpoint H2 section and insert placeholder there
+  const h2Matches = [...finalContentHtml.matchAll(/<\/h2>/g)];
+  if (h2Matches.length >= 2) {
+    const midIndex = Math.floor(h2Matches.length / 2);
+    const targetH2 = h2Matches[midIndex];
+    const pos = targetH2.index! + 5;
+    // Insert after the paragraph following this middle H2
+    const nextP = finalContentHtml.indexOf('</p>', pos);
+    if (nextP !== -1) {
+      finalContentHtml = finalContentHtml.slice(0, nextP + 4) + '\n<!-- IN_ARTICLE_IMAGE_HERE -->\n' + finalContentHtml.slice(nextP + 4);
+    } else {
+      finalContentHtml = finalContentHtml.slice(0, pos) + '\n<!-- IN_ARTICLE_IMAGE_HERE -->\n' + finalContentHtml.slice(pos);
+    }
+  } else {
+    finalContentHtml = finalContentHtml + '\n<!-- IN_ARTICLE_IMAGE_HERE -->\n';
+  }
+
   // Ensure internal links exist in contentHtml
   const defaultInternalLinks = [
     { title: 'Telegram下载', url: 'https://tgcenters.com/telegram-download/', kw: 'Telegram下载' },
