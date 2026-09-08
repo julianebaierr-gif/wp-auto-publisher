@@ -61,10 +61,13 @@ CRITICAL EDITORIAL & SEO REQUIREMENTS (GOOGLE 2026 HELPFUL CONTENT & EEAT COMPLI
    - If the keyword is about Chinese language, focus 100% on language packs, localization steps across platforms, translation bots, and font display.
    - Content must solve real user problems from beginning to end with first-hand, actionable, step-by-step helpful walkthroughs.
 
-2. EXHAUSTIVE PILLAR GUIDE (10,000+ CHINESE CHARACTERS MANDATORY):
+2. EXHAUSTIVE PILLAR GUIDE (10,000+ CHINESE CHARACTERS - DEEP NARRATIVE PROSE):
    - You MUST generate an ultra-comprehensive, deeply detailed master guide with 10,000+ Chinese characters (正文纯汉字字数必须达到并超过10000字).
+   - STRICT PROHIBITION ON SHORT BULLET POINTS / OUTLINE-STYLE TEXT:
+     * NEVER write short bullet lists, brief summary outlines, or lazy 1-line bullet points under headings!
+     * Content MUST be written in extensive, flowing, full-length narrative paragraphs (<p class="wp-block-paragraph">...</p>).
+     * Under EVERY heading (H2, H3, H4), write 5 to 8 expansive, highly descriptive paragraphs (each paragraph 150-300 Chinese characters) explaining the "why", the exact step-by-step "how", realistic troubleshooting situations, interface screenshots descriptions, common traps, and professional best practices.
    - Write 12 to 16 expansive major sections (H2) and multiple descriptive sub-sections (H3, H4), ALL strictly relevant to "${keyword}".
-   - Under every section, provide 5 to 7 detailed, informative paragraphs (<p class="wp-block-paragraph">...</p>) breaking down practical workflows, settings paths, interface tips, troubleshooting steps, and expert recommendations.
 
 3. HIERARCHICAL HEADINGS STRUCTURE (H2 TO H4):
    - Organize logically using clean H2, H3, and H4 tags.

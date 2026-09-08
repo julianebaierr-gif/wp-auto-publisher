@@ -139,6 +139,7 @@ export async function POST(req: NextRequest) {
 
     console.log(`[Step 5/5] Publishing post to WordPress with Yoast SEO metadata & Auto Category...`);
     const categoryId = article.category?.id || (await import('@/lib/wordpress')).autoDetermineCategory(trimmedKeyword, article.title).id;
+    const scheduleDate = body.scheduleDate || undefined;
 
     const publishedPost = await publishPostToWordPress({
       title: article.title,
@@ -148,7 +149,8 @@ export async function POST(req: NextRequest) {
       focusKeyword: article.focusKeyword,
       featuredMediaId: featuredMedia.id,
       categoryId,
-      status: publishStatus,
+      status: scheduleDate ? 'future' : publishStatus,
+      date: scheduleDate,
       wpUrl,
       username: wpUsername,
       appPassword: wpAppPassword,

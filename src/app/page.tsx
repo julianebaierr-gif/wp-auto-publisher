@@ -38,6 +38,7 @@ export default function Home() {
 
   // Bulk generation state
   const [bulkKeywords, setBulkKeywords] = useState('');
+  const [bulkIntervalHours, setBulkIntervalHours] = useState<number>(8); // Default 8 hours auto-schedule
   const [bulkProgress, setBulkProgress] = useState<{ total: number; current: number; logs: any[] }>({
     total: 0,
     current: 0,
@@ -315,9 +316,19 @@ export default function Home() {
     setIsBulkRunning(true);
     setBulkProgress({ total: list.length, current: 0, logs: [] });
 
+    const now = new Date();
+
     for (let i = 0; i < list.length; i++) {
       const kw = list[i];
       setBulkProgress((prev) => ({ ...prev, current: i + 1 }));
+
+      // Calculate schedule date: 1st immediately or staggered every 8 hours
+      let scheduleDateStr: string | undefined = undefined;
+      if (bulkIntervalHours > 0) {
+        const scheduledTime = new Date(now.getTime() + i * bulkIntervalHours * 60 * 60 * 1000);
+        // Format ISO string without milliseconds: YYYY-MM-DDTHH:mm:ss
+        scheduleDateStr = scheduledTime.toISOString().replace(/\.\d{3}Z$/, '');
+      }
 
       try {
         const res = await fetch('/api/generate-and-publish', {
@@ -325,7 +336,11 @@ export default function Home() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             keyword: kw,
-            settings,
+            scheduleDate: scheduleDateStr,
+            settings: {
+              ...settings,
+              publishStatus: scheduleDateStr ? 'future' : settings.publishStatus,
+            },
           }),
         });
         const data = await res.json();
@@ -340,6 +355,7 @@ export default function Home() {
               url: data.postUrl,
               error: data.error,
               title: data.article?.title,
+              scheduledAt: scheduleDateStr ? new Date(scheduleDateStr).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }) : '立即发布',
             },
           ],
         }));
@@ -901,37 +917,56 @@ export default function Home() {
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-mono"
               />
 
-              <div className="mt-4 flex items-center justify-between">
-                <span className="text-xs text-slate-400">
-                  Total Keywords: {bulkKeywords.split('\n').filter((k) => k.trim()).length}
-                </span>
+              <div className="mt-4 flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl bg-slate-950 border border-slate-800">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-slate-300 font-medium">发布间隔排期 (Schedule):</span>
+                  <select
+                    value={bulkIntervalHours}
+                    onChange={(e) => setBulkIntervalHours(Number(e.target.value))}
+                    disabled={isBulkRunning}
+                    className="bg-slate-900 border border-slate-700 text-emerald-400 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-semibold"
+                  >
+                    <option value={8}>每 8 小时发布一篇 (Auto Every 8 Hours - 推荐)</option>
+                    <option value={6}>每 6 小时发布一篇 (Every 6 Hours)</option>
+                    <option value={12}>每 12 小时发布一篇 (Every 12 Hours)</option>
+                    <option value={24}>每 24 小时发布一篇 (Every 24 Hours / 每天1篇)</option>
+                    <option value={0}>全部立即发布 (Publish All Immediately)</option>
+                  </select>
+                </div>
 
-                <button
-                  type="button"
-                  onClick={handleBulkPublish}
-                  disabled={isBulkRunning || !bulkKeywords.trim()}
-                  className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-semibold px-6 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
-                >
-                  {isBulkRunning ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Running Queue ({bulkProgress.current} / {bulkProgress.total})...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      Start Bulk Auto-Publishing
-                    </>
-                  )}
-                </button>
+                <div className="flex items-center justify-between md:justify-end gap-4">
+                  <span className="text-xs text-slate-400 font-mono">
+                    总关键词数: {bulkKeywords.split('\n').filter((k) => k.trim()).length} 篇
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={handleBulkPublish}
+                    disabled={isBulkRunning || !bulkKeywords.trim()}
+                    className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold px-6 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer text-xs"
+                  >
+                    {isBulkRunning ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        批量排期中 ({bulkProgress.current} / {bulkProgress.total})...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        启动自动排期发布 (Start Auto-Publish)
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Bulk Execution Logs */}
             {bulkProgress.logs.length > 0 && (
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-                <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">
-                  Execution History
+                <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3 flex items-center justify-between">
+                  <span>发布排期记录 (Schedule & Status)</span>
+                  <span className="text-xs text-slate-400 font-normal">WordPress 计划定时任务</span>
                 </h3>
                 <div className="space-y-2">
                   {bulkProgress.logs.map((log, idx) => (
@@ -949,22 +984,28 @@ export default function Home() {
                         ) : (
                           <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
                         )}
-                        <span className="font-medium text-slate-200">{log.keyword}</span>
-                        {log.title && <span className="text-slate-400 truncate">({log.title})</span>}
+                        <span className="font-semibold text-slate-200">{log.keyword}</span>
+                        {log.title && <span className="text-slate-400 truncate hidden md:inline">- {log.title}</span>}
                       </div>
 
-                      {log.success && log.url ? (
-                        <a
-                          href={log.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-1 bg-emerald-500 text-slate-950 px-2 py-1 rounded font-semibold shrink-0 hover:bg-emerald-400"
-                        >
-                          View <ExternalLink className="w-3 h-3" />
-                        </a>
-                      ) : (
-                        <span className="text-rose-400 shrink-0">{log.error || 'Failed'}</span>
-                      )}
+                      <div className="flex items-center gap-3 shrink-0">
+                        {log.scheduledAt && (
+                          <span className="text-[11px] bg-slate-800 text-amber-300 px-2 py-0.5 rounded border border-slate-700">
+                            排期: {log.scheduledAt}
+                          </span>
+                        )}
+                        {log.url && (
+                          <a
+                            href={log.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-emerald-400 hover:underline flex items-center gap-1"
+                          >
+                            查看文章 <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                        {log.error && <span className="text-rose-400">{log.error}</span>}
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -330,6 +330,7 @@ export async function publishPostToWordPress({
   featuredMediaId,
   categoryId,
   status = 'publish',
+  date,
   wpUrl,
   username,
   appPassword,
@@ -341,7 +342,8 @@ export async function publishPostToWordPress({
   focusKeyword: string;
   featuredMediaId?: number;
   categoryId?: number;
-  status?: 'publish' | 'draft';
+  status?: 'publish' | 'draft' | 'future';
+  date?: string;
   wpUrl?: string;
   username?: string;
   appPassword?: string;
@@ -353,7 +355,7 @@ export async function publishPostToWordPress({
     title,
     slug,
     content: contentHtml,
-    status,
+    status: date ? 'future' : status,
     // Yoast SEO specific meta values
     meta: {
       _yoast_wpseo_focuskw: focusKeyword,
@@ -361,6 +363,10 @@ export async function publishPostToWordPress({
       _yoast_wpseo_title: title,
     },
   };
+
+  if (date) {
+    payload.date = date;
+  }
 
   if (featuredMediaId) {
     payload.featured_media = featuredMediaId;
