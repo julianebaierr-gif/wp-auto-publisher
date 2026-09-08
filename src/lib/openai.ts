@@ -254,59 +254,191 @@ Return valid JSON:
   }
 
   // Ensure internal links exist in contentHtml ONLY inside <p> paragraphs (NEVER in headings)
-  const defaultInternalLinks = [
-    { title: 'Telegram下载', url: 'https://tgcenters.com/telegram-download/', kw: 'Telegram下载' },
-    { title: 'Telegram注册教程', url: 'https://tgcenters.com/telegram-registration-tutorial/', kw: 'Telegram注册' },
-    { title: 'Telegram中文设置', url: 'https://tgcenters.com/telegram-chinese-language/', kw: 'Telegram中文' },
-    { title: 'Telegram收不到验证码', url: 'https://tgcenters.com/telegram-verification-code-not-received/', kw: '验证码' },
-    { title: 'Telegram隐私设置', url: 'https://tgcenters.com/telegram-privacy-settings/', kw: '隐私设置' },
+  // Guarantee AT LEAST 5 internal links, up to as many as fit naturally.
+  const defaultInternalLinkCandidates = [
+    {
+      title: 'Telegram下载',
+      url: 'https://tgcenters.com/telegram-download/',
+      keywords: ['Telegram下载', '下载Telegram', '电报下载', '客户端下载', '最新版本下载', '下载安装', '正版下载', '官方下载'],
+      contextSentence: '如果您尚未安装或需要更新客户端，可以前往查阅 <a href="https://tgcenters.com/telegram-download/" title="Telegram下载">Telegram下载</a> 获取适用于各平台的最新官方安装包。',
+    },
+    {
+      title: 'Telegram注册教程',
+      url: 'https://tgcenters.com/telegram-registration-tutorial/',
+      keywords: ['Telegram注册', '注册Telegram', '账号注册', '新建账号', '新用户注册', '手机号注册', '注册流程'],
+      contextSentence: '对于刚接触电报的新用户，建议先查阅详细的 <a href="https://tgcenters.com/telegram-registration-tutorial/" title="Telegram注册教程">Telegram注册教程</a> 掌握正确的账号建立与登录操作。',
+    },
+    {
+      title: 'Telegram中文设置',
+      url: 'https://tgcenters.com/telegram-chinese-language/',
+      keywords: ['Telegram中文', '中文设置', '中文语言包', '汉化', '设置中文', '简体中文', '界面汉化'],
+      contextSentence: '若应用默认显示为英文，您可以参考专门的 <a href="https://tgcenters.com/telegram-chinese-language/" title="Telegram中文设置">Telegram中文设置</a> 一键安装官方汉化语言包。',
+    },
+    {
+      title: 'Telegram收不到验证码',
+      url: 'https://tgcenters.com/telegram-verification-code-not-received/',
+      keywords: ['收不到验证码', '验证码接收', '验证码问题', '短信验证码', '验证码', '登录验证码'],
+      contextSentence: '如果在登录或换设备时遇到短信接收延迟，请参考 <a href="https://tgcenters.com/telegram-verification-code-not-received/" title="Telegram收不到验证码">Telegram收不到验证码</a> 的排查方案与解决建议。',
+    },
+    {
+      title: 'Telegram隐私设置',
+      url: 'https://tgcenters.com/telegram-privacy-settings/',
+      keywords: ['隐私设置', '隐私与安全', '隐藏手机号', '两步验证', '账号安全', '隐私防护'],
+      contextSentence: '为了确保个人信息不被泄露，强烈建议仔细配置 <a href="https://tgcenters.com/telegram-privacy-settings/" title="Telegram隐私设置">Telegram隐私设置</a> 隐藏手机号码并开启两步密码验证。',
+    },
+    {
+      title: 'Telegram官网',
+      url: 'https://tgcenters.com/telegram-official-website/',
+      keywords: ['Telegram官网', '电报官网', '官网入口', '官方网站', '电报官方'],
+      contextSentence: '获取最新平台资讯与安全公告，请认准权威的 <a href="https://tgcenters.com/telegram-official-website/" title="Telegram官网">Telegram官网</a> 导航与安全防坑说明。',
+    },
+    {
+      title: 'Telegram电脑版下载',
+      url: 'https://tgcenters.com/telegram-desktop-download/',
+      keywords: ['Telegram电脑版', '电脑版下载', 'PC版', 'Windows版', '桌面版', '电脑端'],
+      contextSentence: '在电脑端办公时，建议搭配使用 <a href="https://tgcenters.com/telegram-desktop-download/" title="Telegram电脑版下载">Telegram电脑版下载</a> 安装桌面客户端以提升日常沟通效率。',
+    },
+    {
+      title: 'Telegram安卓版下载',
+      url: 'https://tgcenters.com/telegram-android-download/',
+      keywords: ['Telegram安卓版', '安卓版下载', 'Android版', '安卓客户端', 'APK下载'],
+      contextSentence: 'Android手机用户可参考 <a href="https://tgcenters.com/telegram-android-download/" title="Telegram安卓版下载">Telegram安卓版下载</a> 获取纯净无广告的官方安装包。',
+    },
+    {
+      title: 'Telegram苹果版下载',
+      url: 'https://tgcenters.com/telegram-iphone-download/',
+      keywords: ['Telegram苹果版', '苹果版下载', 'iPhone版', 'iOS版', 'App Store下载'],
+      contextSentence: 'iOS设备用户推荐阅读 <a href="https://tgcenters.com/telegram-iphone-download/" title="Telegram苹果版下载">Telegram苹果版下载</a> 获取海外App Store换区与下载技巧。',
+    },
   ];
 
   const actualInternalLinksUsed: { title: string; url: string }[] = [];
 
-  for (const item of defaultInternalLinks) {
+  // Step 1: Scan and link matching natural keywords inside <p> paragraphs
+  for (const item of defaultInternalLinkCandidates) {
     if (finalContentHtml.includes(`href="${item.url}"`) || finalContentHtml.includes(`href='${item.url}'`)) {
-      actualInternalLinksUsed.push({ title: item.title, url: item.url });
-    } else {
-      // Smartly inject link ONLY inside <p> paragraphs
-      let injected = false;
+      if (!actualInternalLinksUsed.some(l => l.url === item.url)) {
+        actualInternalLinksUsed.push({ title: item.title, url: item.url });
+      }
+      continue;
+    }
+
+    let injected = false;
+    for (const kw of item.keywords) {
+      if (injected) break;
+      // Match inside <p> paragraphs ONLY
       finalContentHtml = finalContentHtml.replace(/(<p[^>]*>)([\s\S]*?)(<\/p>)/gi, (fullP: string, pOpen: string, pText: string, pClose: string) => {
-        if (!injected && !pText.includes('<a ') && pText.includes(item.kw)) {
+        if (!injected && !pText.includes(item.url) && pText.includes(kw)) {
           injected = true;
-          const newText = pText.replace(item.kw, `<a href="${item.url}" title="${item.title}">${item.kw}</a>`);
+          const newText = pText.replace(kw, `<a href="${item.url}" title="${item.title}">${kw}</a>`);
           return `${pOpen}${newText}${pClose}`;
         }
         return fullP;
       });
-      if (injected) {
+    }
+
+    if (injected) {
+      if (!actualInternalLinksUsed.some(l => l.url === item.url)) {
         actualInternalLinksUsed.push({ title: item.title, url: item.url });
       }
     }
   }
 
-  // Ensure external links exist in contentHtml ONLY inside <p> paragraphs
-  const defaultExternalLinks = [
-    { title: 'Telegram官网', url: 'https://telegram.org', kw: 'Telegram官方' },
-    { title: 'Telegram官方FAQ', url: 'https://telegram.org/faq', kw: '官方常见问题' },
+  // Step 2: GUARANTEE AT LEAST 5 INTERNAL LINKS
+  // If fewer than 5 internal links exist, naturally append helpful context sentences to suitable body paragraphs
+  if (actualInternalLinksUsed.length < 5) {
+    for (const item of defaultInternalLinkCandidates) {
+      if (actualInternalLinksUsed.length >= 5) break;
+      if (finalContentHtml.includes(item.url)) continue;
+
+      let injectedSentence = false;
+      let pIndex = 0;
+      finalContentHtml = finalContentHtml.replace(/(<p[^>]*>)([\s\S]*?)(<\/p>)/gi, (fullP: string, pOpen: string, pText: string, pClose: string) => {
+        pIndex++;
+        // Target mid or later paragraphs that do not already have links, after the 3rd paragraph
+        if (!injectedSentence && pIndex >= 3 && !pText.includes('<a ') && pText.length > 50) {
+          injectedSentence = true;
+          return `${pOpen}${pText} ${item.contextSentence}${pClose}`;
+        }
+        return fullP;
+      });
+
+      if (injectedSentence) {
+        actualInternalLinksUsed.push({ title: item.title, url: item.url });
+      }
+    }
+  }
+
+  // Ensure external links exist in contentHtml ONLY inside <p> paragraphs (minimum 2, up to 5)
+  const defaultExternalLinkCandidates = [
+    {
+      title: 'Telegram官方网站',
+      url: 'https://telegram.org',
+      keywords: ['Telegram官网', 'Telegram官方', '电报官方', '官方网站', 'telegram.org'],
+      contextSentence: '若需了解最新官方动态或直接获取跨平台软件，可随时访问 <a href="https://telegram.org" target="_blank" rel="noopener noreferrer">Telegram官方网站</a> 获取权威信息。',
+    },
+    {
+      title: 'Telegram官方常见问题 (FAQ)',
+      url: 'https://telegram.org/faq',
+      keywords: ['官方FAQ', '常见问题', '官方文档', '官方解答', 'telegram.org/faq'],
+      contextSentence: '此外，Telegram团队还在其 <a href="https://telegram.org/faq" target="_blank" rel="noopener noreferrer">Telegram官方常见问题 (FAQ)</a> 中对各类常见疑难做出了全面而专业的官方解答。',
+    },
+    {
+      title: 'Telegram官方应用列表',
+      url: 'https://telegram.org/apps',
+      keywords: ['官方应用', '官方客户端', '各平台版本', '移动应用', 'telegram.org/apps'],
+      contextSentence: '如需查看所有被官方认证的客户端分支，请浏览 <a href="https://telegram.org/apps" target="_blank" rel="noopener noreferrer">Telegram官方应用列表</a> 了解详情。',
+    },
   ];
+
   const actualExternalLinksUsed: { title: string; url: string }[] = [];
 
-  for (const ext of defaultExternalLinks) {
+  for (const ext of defaultExternalLinkCandidates) {
     if (finalContentHtml.includes(ext.url)) {
-      actualExternalLinksUsed.push({ title: ext.title, url: ext.url });
-    } else {
-      let injectedExt = false;
+      if (!actualExternalLinksUsed.some(l => l.url === ext.url)) {
+        actualExternalLinksUsed.push({ title: ext.title, url: ext.url });
+      }
+      continue;
+    }
+
+    let injectedExt = false;
+    for (const kw of ext.keywords) {
+      if (injectedExt) break;
       finalContentHtml = finalContentHtml.replace(/(<p[^>]*>)([\s\S]*?)(<\/p>)/gi, (fullP: string, pOpen: string, pText: string, pClose: string) => {
-        if (!injectedExt && !pText.includes('<a ') && pText.includes(ext.kw)) {
+        if (!injectedExt && !pText.includes(ext.url) && pText.includes(kw)) {
           injectedExt = true;
-          const newText = pText.replace(ext.kw, `<a href="${ext.url}" target="_blank" rel="noopener noreferrer">${ext.kw}</a>`);
+          const newText = pText.replace(kw, `<a href="${ext.url}" target="_blank" rel="noopener noreferrer">${kw}</a>`);
           return `${pOpen}${newText}${pClose}`;
         }
         return fullP;
       });
-      if (injectedExt) {
+    }
+
+    if (injectedExt) {
+      if (!actualExternalLinksUsed.some(l => l.url === ext.url)) {
         actualExternalLinksUsed.push({ title: ext.title, url: ext.url });
-      } else {
+      }
+    }
+  }
+
+  // GUARANTEE AT LEAST 2 EXTERNAL LINKS
+  if (actualExternalLinksUsed.length < 2) {
+    for (const ext of defaultExternalLinkCandidates) {
+      if (actualExternalLinksUsed.length >= 2) break;
+      if (finalContentHtml.includes(ext.url)) continue;
+
+      let injectedSentence = false;
+      let pIndex = 0;
+      finalContentHtml = finalContentHtml.replace(/(<p[^>]*>)([\s\S]*?)(<\/p>)/gi, (fullP: string, pOpen: string, pText: string, pClose: string) => {
+        pIndex++;
+        if (!injectedSentence && pIndex >= 4 && !pText.includes('<a ') && pText.length > 50) {
+          injectedSentence = true;
+          return `${pOpen}${pText} ${ext.contextSentence}${pClose}`;
+        }
+        return fullP;
+      });
+
+      if (injectedSentence) {
         actualExternalLinksUsed.push({ title: ext.title, url: ext.url });
       }
     }
