@@ -119,10 +119,10 @@ export default function Home() {
     setPublishedResult(null);
 
     const steps = [
-      'Scanning existing tradingblogco.com articles for internal links...',
-      'Crafting 100% Yoast SEO optimized article with GPT-4o...',
-      'Creating 2 custom financial images with DALL-E 3...',
-      'Assembling Yoast SEO score audit and post preview...'
+      '正在从 tgcenters.com 站点地图抓取中文页面与内部链接...',
+      '正在规划 H2-H4 文章大纲、语义关键词及 3000-4000 字中文深度内容...',
+      '正在调用 OpenAI API (gpt-image-1-mini) 生成专属 Telegram 图解与封面...',
+      '正在汇总 Yoast SEO 审核报告与大纲排版预览...'
     ];
 
     let stepIdx = 0;
@@ -476,6 +476,78 @@ export default function Home() {
                     </div>
                   </div>
 
+                  {/* Article Outline Breakdown (H2 to H4 with Character Budget) */}
+                  {previewData.article.outline && previewData.article.outline.length > 0 && (
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                      <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                        <div>
+                          <h4 className="font-bold text-sm text-slate-100 flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
+                            文章大纲规划 (H2 - H4 层级与字数预算)
+                          </h4>
+                          <p className="text-[11px] text-slate-400">各章节结构、层级及预估中文字数</p>
+                        </div>
+                        <span className="text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 rounded-full font-medium">
+                          {previewData.article.outline.length} 个核心章节
+                        </span>
+                      </div>
+
+                      <div className="space-y-2.5">
+                        {previewData.article.outline.map((item: any, idx: number) => {
+                          const levelClass =
+                            item.level === 'h2'
+                              ? 'bg-slate-950 border-blue-500/40 pl-3 font-semibold text-slate-200 text-sm'
+                              : item.level === 'h3'
+                              ? 'bg-slate-950/70 border-slate-700 pl-6 text-xs text-slate-300'
+                              : 'bg-slate-950/40 border-slate-800 pl-9 text-xs text-slate-400';
+                          return (
+                            <div
+                              key={idx}
+                              className={`p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${levelClass}`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="uppercase text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-blue-300 font-mono">
+                                  {item.level}
+                                </span>
+                                <span>{item.heading}</span>
+                              </div>
+                              <div className="flex items-center gap-3 text-xs shrink-0">
+                                {item.description && (
+                                  <span className="text-[11px] text-slate-400 hidden md:inline max-w-xs truncate">
+                                    {item.description}
+                                  </span>
+                                )}
+                                <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                                  约 {item.estimatedCharacters || '300-400'} 字
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Semantic & LSI Keywords Tag Cloud */}
+                  {previewData.article.semanticKeywordsUsed && previewData.article.semanticKeywordsUsed.length > 0 && (
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                      <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        已融入的语义关键词与整站核心词 (Semantic & LSI Keywords)
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {previewData.article.semanticKeywordsUsed.map((kw: string, i: number) => (
+                          <span
+                            key={i}
+                            className="text-xs bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 px-3 py-1 rounded-lg transition"
+                          >
+                            #{kw}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Featured Hero Image Preview */}
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
                     <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -557,7 +629,7 @@ export default function Home() {
                             <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
                             Yoast SEO Audit Score
                           </h4>
-                          <p className="text-[11px] text-slate-400">TradingBlogCo Optimization</p>
+                          <p className="text-[11px] text-slate-400">tgcenters.com (TG Center) 优化标准</p>
                         </div>
                         <div className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-extrabold px-3 py-1 rounded-lg text-sm">
                           100% Score

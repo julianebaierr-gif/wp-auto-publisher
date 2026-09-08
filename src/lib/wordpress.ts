@@ -16,8 +16,25 @@ export function getWpBaseUrl(wpUrl?: string): string {
 }
 
 
+const KNOWN_TGCENTERS_PAGES: Record<string, string> = {
+  'telegram-download': 'Telegram下载：官方下载、安装与注册完整指南',
+  'telegram-registration-tutorial': 'Telegram注册教程：账号注册、验证码验证与登录完整指南',
+  'telegram-chinese-language': 'Telegram中文设置：中文语言包安装与汉化完整指南',
+  'telegram-official-website': 'Telegram官网：官方网站入口、下载方式与平台功能完整指南',
+  'telegram-channels-groups': 'Telegram频道与群组：订阅频道、加入群组与社群管理实用手册',
+  'telegram-privacy-settings': 'Telegram隐私设置：账号安全、号码隐藏与消息保护完整指南',
+  'telegram-faq': 'Telegram常见问题：下载、注册、登录、隐私与使用指南',
+  'telegram-verification-code-not-received': 'Telegram收不到验证码怎么办：原因分析与解决方法',
+  'telegram-macos-download': 'Telegram macOS版下载：Mac版官方客户端下载',
+  'telegram-iphone-download': 'Telegram苹果版下载：iPhone与iPad版官方下载',
+  'telegram-desktop-download': 'Telegram电脑版下载：Windows PC版官方下载',
+  'telegram-android-download': 'Telegram安卓版下载：Telegram安卓版官方下载、安装与注册指南',
+  'telegram-web-login': 'Telegram网页版登录：Telegram Web在线登录入口与使用教程',
+  'blog': 'Telegram博客：Telegram下载、注册、隐私与使用教程',
+};
+
 /**
- * Fetch all existing URLs from post-sitemap.xml and page-sitemap.xml for accurate internal linking
+ * Fetch all existing URLs from post-sitemap.xml and page-sitemap.xml with accurate Chinese titles
  */
 export async function fetchExistingPosts(wpUrl?: string): Promise<WPPostSummary[]> {
   const baseUrl = getWpBaseUrl(wpUrl);
@@ -46,15 +63,19 @@ export async function fetchExistingPosts(wpUrl?: string): Promise<WPPostSummary[
           if (!seenUrls.has(link) && !link.endsWith('.xml') && link !== `${baseUrl}/`) {
             seenUrls.add(link);
             const slug = link.replace(baseUrl, '').replace(/^\/|\/$/g, '');
-            // Create readable title from slug
-            const title = slug
-              .split(/[-_]/)
-              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-              .join(' ');
+            
+            // Check known Chinese dictionary first
+            let title = KNOWN_TGCENTERS_PAGES[slug];
+            if (!title) {
+              title = slug
+                .split(/[-_]/)
+                .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                .join(' ');
+            }
 
             results.push({
               id: results.length + 1,
-              title: title || slug,
+              title,
               link,
               slug,
             });
@@ -117,6 +138,15 @@ export async function uploadImageToWordPress({
   let buffer: Buffer;
   let contentType = 'image/png';
   let extension = 'png';
+
+  if (imageUrl.includes('/api/image-proxy?id=')) {
+    const id = imageUrl.split('/api/image-proxy?id=')[1]?.trim();
+    const { getPreviewImage } = await import('@/lib/imageStore');
+    const dataUrl = id ? getPreviewImage(id) : null;
+    if (dataUrl) {
+      imageUrl = dataUrl;
+    }
+  }
 
   if (imageUrl.startsWith('data:')) {
     const matches = imageUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
@@ -225,7 +255,7 @@ export async function publishPostToWordPress({
     meta: {
       _yoast_wpseo_focuskw: focusKeyword,
       _yoast_wpseo_metadesc: metaDescription,
-      _yoast_wpseo_title: `${title} - Trading Blog Co`,
+      _yoast_wpseo_title: `${title} - TG Center`,
     },
   };
 

@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       imageUrl: featuredImageUrl,
       filename: `${slug}-featured.png`,
       title: `${article.title} - Featured Image`,
-      altText: `${trimmedKeyword} - Complete Trading Guide Overview`,
+      altText: `${trimmedKeyword} - Telegram官方使用与下载指南`,
       wpUrl,
       username: wpUsername,
       appPassword: wpAppPassword,
@@ -78,9 +78,9 @@ export async function POST(req: NextRequest) {
     // Upload in-article image
     const inArticleMedia = await uploadImageToWordPress({
       imageUrl: inArticleImageUrl,
-      filename: `${slug}-chart-setup.png`,
-      title: `${article.title} - Chart Setup and Pattern`,
-      altText: `${trimmedKeyword} - Technical Analysis and Setup Diagram`,
+      filename: `${slug}-guide-diagram.png`,
+      title: `${article.title} - 操作流程与安全设置图解`,
+      altText: `${trimmedKeyword} - Telegram核心设置与操作流程`,
       wpUrl,
       username: wpUsername,
       appPassword: wpAppPassword,
@@ -89,8 +89,8 @@ export async function POST(req: NextRequest) {
     // Inject in-article image HTML into content replacing placeholder or at midpoint
     const inArticleImageHtml = `
 <figure class="wp-block-image size-large">
-  <img src="${inArticleMedia.sourceUrl}" alt="${trimmedKeyword} - Technical Chart Analysis Diagram" class="wp-image-${inArticleMedia.id}" />
-  <figcaption>${trimmedKeyword} Analysis & Key Trading Concepts</figcaption>
+  <img src="${inArticleMedia.sourceUrl}" alt="${trimmedKeyword} - Telegram操作图解" class="wp-image-${inArticleMedia.id}" />
+  <figcaption>${trimmedKeyword} 核心操作与流程图解</figcaption>
 </figure>
 `;
 

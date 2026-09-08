@@ -35,11 +35,11 @@ export async function POST(req: NextRequest) {
       apiKey: openaiApiKey,
     });
 
-    console.log(`[Preview Step 3/3] Generating 2 images with DALL-E 3 for preview...`);
-    const [featuredImageUrl, inArticleImageUrl] = await Promise.all([
+    console.log(`[Preview Step 3/3] Generating 2 images with OpenAI (gpt-image-1-mini) for preview...`);
+    const [rawFeaturedImage, rawInArticleImage] = await Promise.all([
       generateDalleImage({
         prompt: article.featuredImagePrompt,
-        aspect: '1792x1024',
+        aspect: '1024x1024',
         apiKey: openaiApiKey,
       }),
       generateDalleImage({
@@ -49,11 +49,19 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
+    // Save image to server memory store and get lightweight proxy URL
+    const { savePreviewImage } = await import('@/lib/imageStore');
+    const featuredImgId = savePreviewImage(rawFeaturedImage);
+    const inArticleImgId = savePreviewImage(rawInArticleImage);
+
+    const featuredImageUrl = `/api/image-proxy?id=${featuredImgId}`;
+    const inArticleImageUrl = `/api/image-proxy?id=${inArticleImgId}`;
+
     // Construct preview content with in-article image preview
     const inArticleImageHtml = `
 <figure class="wp-block-image size-large my-6">
-  <img src="${inArticleImageUrl}" alt="${trimmedKeyword} - Technical Chart Analysis Diagram" class="rounded-xl shadow-lg border border-slate-700 w-full" />
-  <figcaption class="text-center text-xs text-slate-400 mt-2 italic">${trimmedKeyword} Analysis & Key Trading Concepts</figcaption>
+  <img src="${inArticleImageUrl}" alt="${trimmedKeyword} - Telegram使用教程图解" class="rounded-xl shadow-lg border border-slate-700 w-full" />
+  <figcaption class="text-center text-xs text-slate-400 mt-2 italic">${trimmedKeyword} 核心操作与流程图解</figcaption>
 </figure>
 `;
 
@@ -86,11 +94,11 @@ export async function POST(req: NextRequest) {
       images: {
         featured: {
           url: featuredImageUrl,
-          alt: `${trimmedKeyword} - Complete Trading Guide Overview`,
+          alt: `${trimmedKeyword} - Telegram官方使用与下载指南`,
         },
         inArticle: {
           url: inArticleImageUrl,
-          alt: `${trimmedKeyword} - Technical Analysis and Setup Diagram`,
+          alt: `${trimmedKeyword} - 操作流程与安全设置图解`,
         },
       },
     });

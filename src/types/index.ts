@@ -38,7 +38,13 @@ export interface GeneratedArticle {
     externalLinksCount: number;
     wordCount: number;
   };
-
+  outline?: {
+    heading: string;
+    level: 'h2' | 'h3' | 'h4';
+    estimatedCharacters: number;
+    description: string;
+  }[];
+  semanticKeywordsUsed?: string[];
 }
 
 export interface GenerationProgress {

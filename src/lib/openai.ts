@@ -23,61 +23,63 @@ export async function generateSeoArticle({
 }): Promise<GeneratedArticle> {
   const openai = getOpenAIClient(apiKey);
 
-  // Prepare top internal link candidates (up to 30) for prompt
-  const linkCandidates = existingPosts.slice(0, 35).map((p) => ({
+  // Prepare top internal link candidates with full Chinese context
+  const linkCandidates = existingPosts.slice(0, 30).map((p) => ({
     title: p.title.replace(/<[^>]*>?/gm, '').trim(),
     url: p.link,
   }));
 
-  const systemPrompt = `You are the chief tech editor, Telegram specialist, and Yoast SEO 100% score optimization expert for tgcenters.com (TG Center - Telegram中文版官网与使用指南中心).
-tgcenters.com specializes in comprehensive Telegram guides, including Telegram app downloads (iOS, Android, Windows, Mac), registration tutorials, SMS verification code troubleshooting, Chinese language pack installation (中文语言包), privacy & security settings, groups, channels, and bot usage.
+  const systemPrompt = `You are the chief tech editor, Telegram ecosystem specialist, and Yoast SEO 100% score optimization expert for tgcenters.com (TG Center - Telegram中文版官网与使用指南中心).
+tgcenters.com is an authoritative portal dedicated solely to Telegram guides in Chinese: Telegram app downloads (iOS/Android/Windows/macOS), registration and SMS verification code troubleshooting (收不到验证码), Chinese language pack installation (中文语言包设置/汉化), privacy and security protection (隐私设置/两步验证), supergroups, broadcast channels, and bots.
 
-CRITICAL CONTENT & LENGTH REQUIREMENTS:
-1. LANGUAGE: Entire article (Title, Meta Description, Headings, Detailed Content, Steps, FAQs) MUST be written in Simplified Chinese (简体中文).
-2. ARTICLE LENGTH (STRICT 3000 - 4000 CHINESE CHARACTERS):
-   - You MUST write a comprehensive, exhaustive, practical tutorial containing AT LEAST 3000 TO 4000 CHINESE CHARACTERS (中文正文字数严格在3000到4000中文字之间).
-   - Detail every single step: Prerequisites, step-by-step operating instructions (iOS/Android/Desktop), official download sources, common error troubleshooting (e.g. Too Many Requests, SMS delayed), security tips, and a detailed 5-question FAQ section.
-3. ENGLISH SLUG: The "slug" field MUST be in clean, lowercase, hyphenated English specifically matching the keyword (e.g. "telegram-download-guide", "telegram-chinese-setup-tutorial", "telegram-verification-code-solutions"). Strictly NO Chinese characters in the slug.
+CRITICAL WRITING REQUIREMENTS:
+1. LANGUAGE: Entire article (Title, Meta Description, Headings, Detailed Content, FAQ) MUST be written in Simplified Chinese (简体中文).
+2. OUTLINE FIRST (H2 TO H4 WITH CHINESE CHARACTER BUDGET):
+   - You MUST first design a comprehensive, structured hierarchical outline (H2 to H4).
+   - For every section in the outline, specify its heading, level ('h2'|'h3'|'h4'), estimated character count (预算中文字数 e.g. 350-500字), and a brief description.
+3. IN-DEPTH, PARAGRAPH-RICH CONTENT (STRICT 3000 - 4000 CHINESE CHARACTERS):
+   - Total body content MUST be between 3000 and 4000 Chinese characters (字数严格在3000至4000字之间).
+   - DO NOT just write brief bullet points or quick summaries! Write detailed, narrative, explanatory paragraphs with deep practical instructions, real-world troubleshooting scenarios, operational logic, and security analysis.
+4. RICH SEMANTIC & LSI KEYWORDS:
+   - Heavily incorporate relevant semantic keywords and LSI terms throughout the outline and content (e.g., Telegram中文版, 电报下载, 纸飞机, 验证码接收, 双重认证, 隐藏手机号, 官方正版, 苹果ID切换, 安卓APK安装, 桌面端同步, 频道订阅, 群组管理).
+   - Also actively incorporate the keywords of already published articles on the site so that internal linking happens completely naturally and contextually.
+5. SMART CHINESE KEYWORD INTERNAL LINKING (4 TO 5 MANDATORY):
+   - You MUST embed 4 to 5 internal links from the provided tgcenters.com sitemap list.
+   - Anchor text MUST be natural Chinese keywords (e.g., <a href="https://tgcenters.com/telegram-download/" title="Telegram下载">Telegram官方下载</a>, <a href="https://tgcenters.com/telegram-chinese-language/" title="Telegram中文包设置">Telegram中文语言包设置</a>, <a href="https://tgcenters.com/telegram-verification-code-not-received/" title="Telegram收不到验证码">Telegram收不到验证码解决方法</a>, <a href="https://tgcenters.com/telegram-privacy-settings/" title="Telegram隐私设置">Telegram隐私与安全设置</a>).
+   - If a sentence does not naturally contain the exact keyword, smartly weave the keyword and surrounding context into the paragraph, then place the anchor link.
+6. AUTHORITATIVE EXTERNAL LINKS (AT LEAST 2 MANDATORY):
+   - Smartly link to 2 official/authoritative external sources using natural Chinese anchor text (e.g., <a href="https://telegram.org" target="_blank" rel="noopener noreferrer">Telegram官方网站 (telegram.org)</a>, Apple App Store, Google Play, or Wikipedia).
+7. ENGLISH SLUG: The "slug" field MUST be clean, lowercase, hyphenated English specifically representing the focus keyword (e.g., "telegram-download-and-registration-guide"). Strictly NO Chinese in slug.
+8. OPENAI IMAGE PROMPTS (gpt-image-1-mini):
+   - Generate 2 English prompts for OpenAI Image API specifically matching "${keyword}" with Telegram blue aesthetic, sleek app UI mockup, modern 3D tech, no words, no letters, no watermark.
 
-CRITICAL INTERNAL & EXTERNAL LINKING:
-1. INTERNAL LINKS (4 to 5 MANDATORY):
-   - You MUST select and embed EXACTLY 4 to 5 internal links from the provided list of tgcenters.com sitemap URLs.
-   - Embed them naturally in the Chinese sentences with descriptive anchor text (e.g., <a href="https://tgcenters.com/telegram-download/" title="Telegram下载">Telegram官方客户端下载</a> or <a href="https://tgcenters.com/telegram-chinese-language/" title="Telegram中文语言包">Telegram中文汉化包</a>).
-2. EXTERNAL OFFICIAL LINKS (AT LEAST 2 MANDATORY):
-   - Include AT LEAST 2 authoritative official links (such as Telegram official site: https://telegram.org, Google Play Store, Apple App Store, or Wikipedia).
-   - Format: <a href="https://telegram.org" target="_blank" rel="noopener noreferrer">Telegram官方网站</a>.
-
-CRITICAL IMAGE GENERATION INSTRUCTIONS (FOR OPENAI IMAGE API):
-- The images MUST be 100% strictly relevant to the exact keyword "${keyword}".
-- Focus visually on modern tech/mobile messaging: Telegram blue theme, sleek smartphone interface, paper plane icon, chat bubbles, security shield, or verification screen.
-- featuredImagePrompt: A sleek, high-end 3D modern tech graphic representing "${keyword}", featuring Telegram blue gradients, smartphone UI screen, clean minimal digital art, 4k, absolutely NO text or letters.
-- inArticleImagePrompt: A clean, step-by-step tech infographic/diagram illustration specifically depicting the process of "${keyword}", modern UI mockup, no text.
-
-FORMAT: Return pure JSON conforming strictly to the requested schema. No markdown codeblocks (\`\`\`json). Return valid raw JSON only.`;
+FORMAT: Return valid raw JSON only conforming strictly to schema. No markdown codeblocks (\`\`\`json).`;
 
   const userPrompt = `Target Focus Keyword: "${keyword}"
 
-Available Existing tgcenters.com Sitemap URLs for Internal Linking (Choose 4 to 5):
+Available Existing tgcenters.com Sitemap Pages for Context & Internal Linking:
 ${JSON.stringify(linkCandidates, null, 2)}
 
-Generate the complete 3000-4000 character in-depth Chinese Telegram guide in valid JSON format:
+Generate the complete outline, semantic keywords, and 3000-4000 character in-depth Chinese Telegram guide in JSON format:
 {
-  "title": "Telegram相关SEO标题（包含关键词，如：Telegram下载安装与注册教程）",
+  "title": "Telegram SEO中文标题（包含关键词）",
   "slug": "english-keyword-slug-only",
-  "metaDescription": "中文元描述（包含关键词，130-150字）",
+  "metaDescription": "中文元描述（包含关键词，130-155字）",
   "focusKeyword": "${keyword}",
+  "semanticKeywordsUsed": ["Telegram中文版", "电报注册", "验证码", "..."],
+  "outline": [
+    { "level": "h2", "heading": "一、...", "estimatedCharacters": 400, "description": "详细阐述..." },
+    { "level": "h3", "heading": "1.1 ...", "estimatedCharacters": 350, "description": "深入讲解..." },
+    { "level": "h4", "heading": "1.1.1 ...", "estimatedCharacters": 250, "description": "具体步骤与注意事项..." }
+  ],
   "contentHtml": "<h2>...</h2><p>...</p><!-- IN_ARTICLE_IMAGE_HERE --><p>...</p>...",
   "featuredImagePrompt": "High quality English prompt for OpenAI image: modern 3D tech concept representing ${keyword} with Telegram blue theme, sleek smartphone UI, clean aesthetic, no text, no watermark",
   "inArticleImagePrompt": "High quality English prompt for OpenAI image: technical workflow illustration of ${keyword}, modern digital app mockup, clean style, no text, no watermark",
   "internalLinksUsed": [
-    { "title": "Sitemap Page Title 1", "url": "https://tgcenters.com/..." },
-    { "title": "Sitemap Page Title 2", "url": "https://tgcenters.com/..." },
-    { "title": "Sitemap Page Title 3", "url": "https://tgcenters.com/..." },
-    { "title": "Sitemap Page Title 4", "url": "https://tgcenters.com/..." }
+    { "title": "页面标题", "url": "https://tgcenters.com/..." }
   ],
   "externalLinksUsed": [
-    { "title": "Telegram官网", "url": "https://telegram.org" },
-    { "title": "Wikipedia Telegram", "url": "https://en.wikipedia.org/wiki/Telegram_(software)" }
+    { "title": "Telegram官网", "url": "https://telegram.org" }
   ]
 }`;
 
@@ -94,7 +96,7 @@ Generate the complete 3000-4000 character in-depth Chinese Telegram guide in val
   const contentText = response.choices[0]?.message?.content || '{}';
   const parsed = JSON.parse(contentText);
 
-  // Normalize spaces for Chinese keyword checking
+  // Calculate actual Chinese word count
   const pureChineseText = (parsed.contentHtml || '').replace(/<[^>]*>/g, '').replace(/\s+/g, '');
   const wordCount = pureChineseText.length;
   const kwClean = keyword.replace(/\s+/g, '').toLowerCase();
@@ -132,6 +134,8 @@ Generate the complete 3000-4000 character in-depth Chinese Telegram guide in val
     inArticleImagePrompt: parsed.inArticleImagePrompt,
     internalLinksUsed: parsed.internalLinksUsed || [],
     externalLinksUsed: parsed.externalLinksUsed || [],
+    outline: parsed.outline || [],
+    semanticKeywordsUsed: parsed.semanticKeywordsUsed || [],
     yoastScoreEstimate,
   };
 }
