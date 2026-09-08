@@ -161,6 +161,58 @@ Generate the complete 10,000+ Chinese character exhaustive guide in JSON format:
   const contentText = response.choices[0]?.message?.content || '{}';
   const parsed = JSON.parse(contentText);
 
+  let finalContentHtml = parsed.contentHtml || '';
+
+  // Check initial Chinese character count
+  let currentChineseLen = finalContentHtml.replace(/<[^>]*>/g, '').replace(/\s+/g, '').length;
+  console.log(`[OpenAI First Pass Length] Pure Chinese characters: ${currentChineseLen}`);
+
+  // If below 10,000 characters, execute seamless in-depth expansion pass to hit 10,000+ characters!
+  if (currentChineseLen < 10000) {
+    try {
+      console.log(`[OpenAI Expansion] Expanding content from ${currentChineseLen} to 10,000+ Chinese characters with deep narrative practical sections...`);
+      const expansionPrompt = `The following Chinese article currently has ${currentChineseLen} Chinese characters, but MUST exceed 10,000 Chinese characters.
+Focus Keyword: "${keyword}".
+
+Please generate 6 to 8 additional, highly in-depth, completely unique, professional practical sections (H2, H3, H4) with extensive narrative paragraphs (<p class="wp-block-paragraph">...</p>) expanding deeply on advanced features, day-to-day user scenarios, security configurations, practical tips, and detailed troubleshooting specifically for "${keyword}".
+
+Requirements:
+- Pure narrative flowing paragraphs (5-7 paragraphs per section, 150-300 characters each).
+- NO bullet points, NO numeric prefixes (no 1. 2. 一、 二、).
+- NO links inside headings.
+- Strictly relevant to "${keyword}".
+
+Current Outline/Sections already covered:
+${(parsed.outline || []).map((o: any) => o.heading).join(', ')}
+
+Return valid JSON:
+{
+  "additionalContentHtml": "<h2>...</h2><p>...</p><h3>...</h3><p>...</p>"
+}`;
+
+      const expRes = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'You are the chief technology editor for tgcenters.com. Write extensive, authoritative Chinese long-form content.' },
+          { role: 'user', content: expansionPrompt },
+        ],
+        temperature: 0.7,
+        max_tokens: 16000,
+        response_format: { type: 'json_object' },
+      });
+
+      const expText = expRes.choices[0]?.message?.content || '{}';
+      const expParsed = JSON.parse(expText);
+      if (expParsed.additionalContentHtml) {
+        finalContentHtml = finalContentHtml + '\n' + expParsed.additionalContentHtml;
+        const newLen = finalContentHtml.replace(/<[^>]*>/g, '').replace(/\s+/g, '').length;
+        console.log(`[OpenAI Expanded Length] Total pure Chinese characters now: ${newLen}`);
+      }
+    } catch (expErr: any) {
+      console.warn('Content expansion warning:', expErr.message);
+    }
+  }
+
   // Strip any accidental numeric prefixes from outline and content headings
   if (Array.isArray(parsed.outline)) {
     parsed.outline = parsed.outline.map((item: any) => ({
@@ -168,8 +220,6 @@ Generate the complete 10,000+ Chinese character exhaustive guide in JSON format:
       heading: item.heading.replace(/^([一二三四五六七八九十]+[、. ]|\d+(\.\d+)*[、. ]|步骤[一二三四五\d]+[：: ]*)/, '').replace(/<[^>]*>/g, '').trim(),
     }));
   }
-
-  let finalContentHtml = parsed.contentHtml || '';
 
   // Clean H2, H3, H4 tags: remove any links inside headings and remove leading numbers
   finalContentHtml = finalContentHtml.replace(
