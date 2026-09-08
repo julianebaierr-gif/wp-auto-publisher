@@ -361,13 +361,26 @@ Return valid JSON:
       let pIndex = 0;
       finalContentHtml = finalContentHtml.replace(/(<p[^>]*>)([\s\S]*?)(<\/p>)/gi, (fullP: string, pOpen: string, pText: string, pClose: string) => {
         pIndex++;
-        // Target mid or later paragraphs that do not already have links, after the 3rd paragraph
-        if (!injectedSentence && pIndex >= 3 && !pText.includes('<a ') && pText.length > 50) {
+        // Target paragraphs after the 2nd paragraph that don't already have this URL
+        if (!injectedSentence && pIndex >= 2 && !pText.includes(item.url) && !pText.includes('<a ')) {
           injectedSentence = true;
           return `${pOpen}${pText} ${item.contextSentence}${pClose}`;
         }
         return fullP;
       });
+
+      // Fallback: if all paragraphs had links or condition wasn't met, append to any paragraph after 2nd that doesn't have this URL
+      if (!injectedSentence) {
+        let pFallbackIdx = 0;
+        finalContentHtml = finalContentHtml.replace(/(<p[^>]*>)([\s\S]*?)(<\/p>)/gi, (fullP: string, pOpen: string, pText: string, pClose: string) => {
+          pFallbackIdx++;
+          if (!injectedSentence && pFallbackIdx >= 3 && !pText.includes(item.url)) {
+            injectedSentence = true;
+            return `${pOpen}${pText} ${item.contextSentence}${pClose}`;
+          }
+          return fullP;
+        });
+      }
 
       if (injectedSentence) {
         actualInternalLinksUsed.push({ title: item.title, url: item.url });
@@ -437,12 +450,25 @@ Return valid JSON:
       let pIndex = 0;
       finalContentHtml = finalContentHtml.replace(/(<p[^>]*>)([\s\S]*?)(<\/p>)/gi, (fullP: string, pOpen: string, pText: string, pClose: string) => {
         pIndex++;
-        if (!injectedSentence && pIndex >= 4 && !pText.includes('<a ') && pText.length > 50) {
+        if (!injectedSentence && pIndex >= 3 && !pText.includes(ext.url) && !pText.includes('<a ')) {
           injectedSentence = true;
           return `${pOpen}${pText} ${ext.contextSentence}${pClose}`;
         }
         return fullP;
       });
+
+      // Fallback: append if not yet placed
+      if (!injectedSentence) {
+        let pFallbackIdx = 0;
+        finalContentHtml = finalContentHtml.replace(/(<p[^>]*>)([\s\S]*?)(<\/p>)/gi, (fullP: string, pOpen: string, pText: string, pClose: string) => {
+          pFallbackIdx++;
+          if (!injectedSentence && pFallbackIdx >= 4 && !pText.includes(ext.url)) {
+            injectedSentence = true;
+            return `${pOpen}${pText} ${ext.contextSentence}${pClose}`;
+          }
+          return fullP;
+        });
+      }
 
       if (injectedSentence) {
         actualExternalLinksUsed.push({ title: ext.title, url: ext.url });
