@@ -56,6 +56,10 @@ export interface GeneratedArticle {
     description: string;
   }[];
   semanticKeywordsUsed?: string[];
+  faqItems?: {
+    question: string;
+    answer: string;
+  }[];
 }
 
 export interface GenerationProgress {

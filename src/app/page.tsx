@@ -554,6 +554,33 @@ export default function Home() {
                       </div>
                     </div>
                   )}
+                  {/* Google FAQ Schema (5-10 FAQs) Preview */}
+                  {previewData.article.faqItems && previewData.article.faqItems.length > 0 && (
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                      <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                        <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                          Google FAQ 结构化数据预览 (5-10 Short FAQs)
+                        </h4>
+                        <span className="text-[11px] bg-amber-500/10 text-amber-300 border border-amber-500/20 px-2 py-0.5 rounded font-mono">
+                          JSON-LD Schema.org
+                        </span>
+                      </div>
+                      <div className="space-y-3">
+                        {previewData.article.faqItems.map((faq: { question: string; answer: string }, idx: number) => (
+                          <div key={idx} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+                            <div className="font-semibold text-xs text-amber-300 mb-1 flex items-start gap-2">
+                              <span className="shrink-0 bg-amber-500/20 text-amber-400 px-1.5 py-0.2 rounded text-[10px]">Q{idx + 1}</span>
+                              {faq.question}
+                            </div>
+                            <p className="text-xs text-slate-400 leading-relaxed pl-6">
+                              {faq.answer}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Featured Hero Image Preview */}
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">

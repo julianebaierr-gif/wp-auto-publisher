@@ -73,19 +73,23 @@ export async function POST(req: NextRequest) {
     if (finalContent.includes('<!-- IN_ARTICLE_IMAGE_HERE -->')) {
       finalContent = finalContent.replace('<!-- IN_ARTICLE_IMAGE_HERE -->', inArticleImageHtml);
     } else {
-      const firstH2Close = finalContent.indexOf('</h2>');
-      if (firstH2Close !== -1) {
-        const nextParagraphEnd = finalContent.indexOf('</p>', firstH2Close);
+      // Find middle H2 or midpoint paragraph to insert 2nd image strictly in middle
+      const h2Matches = [...finalContent.matchAll(/<\/h2>/g)];
+      if (h2Matches.length >= 2) {
+        const midH2 = h2Matches[Math.floor(h2Matches.length / 2)];
+        const insertIdx = midH2.index! + 5;
+        finalContent = finalContent.slice(0, insertIdx) + inArticleImageHtml + finalContent.slice(insertIdx);
+      } else {
+        const midPoint = Math.floor(finalContent.length / 2);
+        const nextParagraphEnd = finalContent.indexOf('</p>', midPoint);
         if (nextParagraphEnd !== -1) {
           finalContent =
             finalContent.slice(0, nextParagraphEnd + 4) +
             inArticleImageHtml +
             finalContent.slice(nextParagraphEnd + 4);
         } else {
-          finalContent = inArticleImageHtml + finalContent;
+          finalContent = finalContent + inArticleImageHtml;
         }
-      } else {
-        finalContent = inArticleImageHtml + finalContent;
       }
     }
 
