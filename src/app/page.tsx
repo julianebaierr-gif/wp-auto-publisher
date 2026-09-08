@@ -47,12 +47,13 @@ export default function Home() {
 
   // Settings State
   const [settings, setSettings] = useState<GenerationSettings>({
-    wpUrl: 'https://tradingblogco.com',
-    wpUsername: '',
-    wpAppPassword: '',
+    wpUrl: 'https://tgcenters.com',
+    wpUsername: 'n8n-bot',
+    wpAppPassword: 'RPbI TjbC Hb08 wC5E Ok0U Dtpo',
     openaiApiKey: '',
     publishStatus: 'publish',
   });
+
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<any>(null);

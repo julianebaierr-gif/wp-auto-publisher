@@ -11,9 +11,10 @@ export function getWpAuthHeaders(username?: string, appPassword?: string) {
 }
 
 export function getWpBaseUrl(wpUrl?: string): string {
-  const url = wpUrl || process.env.WORDPRESS_URL || 'https://tradingblogco.com';
+  const url = wpUrl || process.env.WORDPRESS_URL || 'https://tgcenters.com';
   return url.replace(/\/+$/, '');
 }
+
 
 /**
  * Fetch existing posts from WordPress for internal linking context
