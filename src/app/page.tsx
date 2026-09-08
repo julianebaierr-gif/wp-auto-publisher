@@ -195,10 +195,63 @@ export default function Home() {
         const wpPass = (settings.wpAppPassword || 'RPbI TjbC Hb08 wC5E Ok0U Dtpo').replace(/\s+/g, '');
         const token = btoa(`${wpUser}:${wpPass}`);
 
+        let featuredId = previewData.images?.featured?.id ? Number(previewData.images.featured.id) : 0;
+        let postContentHtml = previewData.article.contentHtml;
+
+        // Upload featured image directly from browser if not yet uploaded to WordPress
+        if (featuredId === 0 && previewData.images?.featured?.url) {
+          try {
+            console.log('[Browser Fallback] Uploading featured image directly to WordPress media...');
+            const featBlob = await fetch(previewData.images.featured.url).then(r => r.blob());
+            const featUploadRes = await fetch(`${wpUrl}/wp-json/wp/v2/media`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Basic ${token}`,
+                'Content-Disposition': `attachment; filename="${previewData.article.slug || 'featured'}-featured.jpg"`,
+                'Content-Type': featBlob.type || 'image/jpeg',
+              },
+              body: featBlob,
+            });
+            if (featUploadRes.ok) {
+              const featData = await featUploadRes.json();
+              if (featData.id) {
+                featuredId = featData.id;
+                console.log('[Browser Fallback] Featured image uploaded successfully. Media ID:', featuredId);
+              }
+            }
+          } catch (uploadFeatErr) {
+            console.warn('[Browser Fallback] Featured image upload notice:', uploadFeatErr);
+          }
+        }
+
+        // Upload in-article image directly from browser if needed
+        if (previewData.images?.inArticle?.url && !previewData.images.inArticle.url.includes('/wp-content/uploads/')) {
+          try {
+            const inArtBlob = await fetch(previewData.images.inArticle.url).then(r => r.blob());
+            const inArtRes = await fetch(`${wpUrl}/wp-json/wp/v2/media`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Basic ${token}`,
+                'Content-Disposition': `attachment; filename="${previewData.article.slug || 'diagram'}-diagram.jpg"`,
+                'Content-Type': inArtBlob.type || 'image/jpeg',
+              },
+              body: inArtBlob,
+            });
+            if (inArtRes.ok) {
+              const inArtData = await inArtRes.json();
+              if (inArtData.source_url) {
+                postContentHtml = postContentHtml.split(previewData.images.inArticle.url).join(inArtData.source_url);
+              }
+            }
+          } catch (inArtUploadErr) {
+            console.warn('[Browser Fallback] In-article image upload notice:', inArtUploadErr);
+          }
+        }
+
         const payload: any = {
           title: previewData.article.title,
           slug: previewData.article.slug,
-          content: previewData.article.contentHtml,
+          content: postContentHtml,
           status: settings.publishStatus || 'publish',
           meta: {
             _yoast_wpseo_focuskw: previewData.article.focusKeyword,
@@ -207,8 +260,8 @@ export default function Home() {
           },
         };
 
-        if (previewData.images?.featured?.id && Number(previewData.images.featured.id) > 0) {
-          payload.featured_media = Number(previewData.images.featured.id);
+        if (featuredId > 0) {
+          payload.featured_media = featuredId;
         }
         if (previewData.article.category?.id) {
           payload.categories = [previewData.article.category.id];

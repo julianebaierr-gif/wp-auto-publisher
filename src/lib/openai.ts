@@ -51,66 +51,68 @@ export async function generateSeoArticle({
   }));
 
   const systemPrompt = `You are the chief technology editor, Telegram ecosystem authority, and Yoast 100% SEO master for tgcenters.com (TG Center - Telegram中文官网与权威指南中心).
-tgcenters.com publishes the most exhaustive, authoritative, long-form Chinese Telegram manuals available anywhere online.
+tgcenters.com publishes the most authoritative, 100% unique, comprehensive long-form Chinese Telegram manuals.
 
-CRITICAL EDITORIAL & SEO REQUIREMENTS:
-1. EXHAUSTIVE LENGTH (10,000+ CHINESE CHARACTERS MANDATORY):
-   - You MUST generate an ultra-long, deeply comprehensive master guide exceeding 10,000 Chinese characters (字数必须极其充实，全文中文纯汉字总字数务必达到并超过10000字).
-   - Write 10 to 14 expansive major sections (H2) and multiple descriptive sub-sections (H3).
-   - EVERY section must contain 4 to 6 long, highly detailed, real-world narrative paragraphs (<p class="wp-block-paragraph">...</p>).
-   - Elaborate in extraordinary detail on: system architecture, protocol mechanics (MTProto), cross-platform setup (iOS, Android, Windows, macOS, Linux), SMS/SMS gateway carrier routing differences (中国移动/联通/电信/虚拟号/VoIP), Google Voice & +86 country code intricacies, two-step verification security setup, secret chats & end-to-end encryption mechanics, bot API, massive channels & supergroup administration, IP masking & MTProxy/SOCKS5 configuration, and extensive practical troubleshooting walkthroughs.
+CRITICAL EDITORIAL & SEO REQUIREMENTS (GOOGLE 2026 HELPFUL CONTENT & EEAT COMPLIANT):
+1. 100% UNIQUE, HIGH-VALUE CONTENT (GOOGLE 2026 CORE UPDATE ALIGNED):
+   - Every single article generated must be completely bespoke, highly original, and tailored strictly to "${keyword}".
+   - Zero boilerplate, zero generic filler. Focus on first-hand actionable experience, technical protocol mechanics (MTProto, SMS carrier routing, Android APK vs Google Play version differences, iOS TestFlight/App Store restrictions, desktop multi-account isolation, proxy configurations, end-to-end secret chat verification).
+   - Word count: Highly comprehensive master guide exceeding 10,000 Chinese characters across 10 to 14 in-depth major sections (H2) and descriptive sub-sections (H3).
 
-2. NO NUMERIC HEADINGS OR NUMBERED PREFIXES (STRICTLY FORBIDDEN):
+2. STRICTLY NO LINKS INSIDE HEADINGS (H1, H2, H3, H4):
+   - Internal and external links MUST ONLY be placed inside standard body paragraphs (<p class="wp-block-paragraph">...</p>).
+   - NEVER place any <a> tags inside <h2>, <h3>, or <h4> headings under any circumstance.
+
+3. NO NUMERIC HEADINGS OR NUMBERED PREFIXES:
    - NEVER write "一、", "二、", "三、", "1.", "2.", "1.1", "1.2", "1.1.1", or "步骤一".
-   - Headings MUST be clean, natural, professional descriptive phrases or natural questions just like on tgcenters.com (e.g., "Telegram收不到验证码怎么办? 先确认验证码发送位置", "验证码可能发送到已登录设备", "短信验证码与应用内验证码机制深度解析", "常见问题解答与FAQ").
+   - Headings MUST be natural professional descriptive phrases or natural questions.
 
-3. MANDATORY 5 TO 10 SHORT FAQ ITEMS WITH GOOGLE FAQ SCHEMA:
-   - Provide between 5 and 10 high-value, concise, practical questions and answers that real users ask Google search.
-   - Questions should be natural search queries (e.g., "为什么国内手机号收不到Telegram验证码？", "Telegram如何设置成中文？", "Telegram网页版和客户端有什么区别？", "如何防止Telegram账号被盗？", "Telegram可以在几台设备上同时登录？").
-   - Answers must be concise, accurate, and direct (between 50 and 120 Chinese characters each), optimized for Google Featured Snippets.
-   - Return these FAQ items in both the HTML body and the structured "faqItems" JSON array.
+4. MANDATORY 5 TO 10 SHORT FAQ ITEMS WITH GOOGLE FAQ SCHEMA:
+   - Provide 5 to 10 high-value, concise, practical questions and answers that real users ask Google search.
+   - Answers must be concise, accurate, and direct (between 50 and 120 Chinese characters each).
 
-4. MANDATORY INTERNAL LINKS (EMBED 4 TO 5 DIRECTLY INSIDE PARAGRAPHS):
-   - You MUST embed 4 to 5 clickable HTML links <a href="..." title="...">...</a> inside the body paragraphs using candidate URLs from tgcenters.com.
-   - Anchor texts must be natural Chinese keywords (e.g., <a href="https://tgcenters.com/telegram-download/" title="Telegram官方下载">Telegram官方下载</a>, <a href="https://tgcenters.com/telegram-verification-code-not-received/" title="Telegram收不到验证码解决方法">Telegram收不到验证码解决方法</a>, <a href="https://tgcenters.com/telegram-chinese-language/" title="Telegram中文设置">Telegram中文语言包设置</a>, <a href="https://tgcenters.com/telegram-privacy-settings/" title="Telegram隐私设置">Telegram隐私与安全设置</a>).
-   - DO NOT skip embedding them inside the contentHtml!
+5. MANDATORY INTERNAL LINKS (EMBED 4 TO 5 IN BODY PARAGRAPHS ONLY):
+   - Embed 4 to 5 clickable HTML links <a href="..." title="...">...</a> inside body paragraphs (<p>) using candidate URLs from tgcenters.com.
+   - Never place inside headings!
 
-5. MANDATORY EXTERNAL LINKS (EMBED AT LEAST 2 OFFICIAL SITES):
-   - You MUST embed at least 2 official external links directly inside the body paragraphs:
-     * <a href="https://telegram.org" target="_blank" rel="noopener noreferrer">Telegram官方网站 (telegram.org)</a>
+6. MANDATORY EXTERNAL LINKS (EMBED AT LEAST 2 OFFICIAL SITES IN PARAGRAPHS ONLY):
+   - Embed at least 2 official links:
+     * <a href="https://telegram.org" target="_blank" rel="noopener noreferrer">Telegram官方网站</a>
      * <a href="https://telegram.org/faq" target="_blank" rel="noopener noreferrer">Telegram官方常见问题 (FAQ)</a>
 
-6. MID-ARTICLE IMAGE PLACEHOLDER:
-   - Place the exact comment \`<!-- IN_ARTICLE_IMAGE_HERE -->\` exactly in the middle of the article content (between the 5th and 6th major H2 sections).
-
-7. YOAST SEO EXACT KEYWORD ISOLATION (CRITICAL REQUIREMENT):
+7. YOAST SEO EXACT KEYWORD FORMATTING (CRITICAL - STRICTLY NO BRACKETS 【 】, USE CLEAN SPACES):
    - The focus keyword is: "${keyword}".
-   - In the "title": The main keyword "${keyword}" MUST stand out prominently as a distinct, standalone phrase separated cleanly with a colon, hyphen, or clean spacing (e.g. "${keyword}：全面使用指南与技巧", or "${keyword} - 2026官方最新教程"). Do NOT blend, fuse, or merge the keyword characters into other words.
-   - In the "metaDescription": The main keyword "${keyword}" MUST appear verbatim as a standalone phrase right at the beginning or front of the sentence (e.g. "针对${keyword}，本文提供..."). It must be clean, distinct, and between 130 and 155 Chinese characters.
-   - In the FIRST PARAGRAPH (<p>...</p>) of "contentHtml": The main keyword "${keyword}" MUST appear within the very first 60 characters as an exact, standalone phrase (例如："很多用户在搜索【${keyword}】时，最关心的就是..." 或 "关于${keyword}，首先需要了解的是...") so that Yoast SEO immediately gives a 100% green light for "Keyphrase in introduction".
+   - NEVER wrap the keyword in Chinese brackets like 【${keyword}】 or [${keyword}].
+   - Instead, ALWAYS place clean spaces before and after the keyword: " ${keyword} " so that Yoast SEO word boundaries and Chinese tokenizers detect the standalone focus keyword with 100% green light!
+   - In Title: Place " ${keyword} " clearly separated, e.g.: " ${keyword} ：官方使用与下载设置全攻略".
+   - In Meta Description: Start with clean spaced keyword: "针对 ${keyword} ，本文提供全面实用的中文指南...".
+   - In the First Paragraph (<p>...</p>): The very first sentence must contain " ${keyword} " within the first 60 characters with clean spaces and no brackets.
 
-8. ENGLISH SLUG:
-   - Clean, lowercase, hyphenated English (e.g., "telegram-usage-guide"). Strictly NO Chinese in slug.
+8. MID-ARTICLE IMAGE PLACEHOLDER:
+   - Place \`<!-- IN_ARTICLE_IMAGE_HERE -->\` exactly in the middle of the article content.
 
-9. OPENAI IMAGE PROMPTS:
-   - Generate 2 English prompts for OpenAI Image API specifically matching "${keyword}" with modern Telegram 3D tech aesthetic, clean mobile UI mockup, no text, no watermark.
+9. ENGLISH SLUG:
+   - Clean, lowercase, hyphenated English (e.g., "telegram-chinese-setup-guide"). Strictly NO Chinese in slug.
 
-FORMAT: Return valid raw JSON only conforming strictly to schema. No markdown codeblocks (\`\`\`json).`;
+10. OPENAI IMAGE PROMPTS:
+   - Generate 2 English prompts for OpenAI Image API specifically tailored to "${keyword}" with 3D tech aesthetic, clean smartphone mockup, no text, no watermark.
 
-  const userPrompt = `Target Focus Keyword: "${keyword}" (Must appear as a distinct standalone phrase without blending in Title, Meta Description, and First Paragraph!)
+FORMAT: Return valid raw JSON only.`;
+
+  const userPrompt = `Target Focus Keyword: "${keyword}" (Must appear with clean spaces " ${keyword} " without any brackets 【】 in Title, Meta Description, and First Paragraph!)
 
 Available tgcenters.com Sitemap Pages for Context & Internal Linking:
 ${JSON.stringify(linkCandidates, null, 2)}
 
-Generate the complete 10,000+ Chinese character master guide in JSON format:
+Generate the complete 10,000+ Chinese character unique guide in JSON format:
 {
-  "title": "${keyword}：详细使用指南与实用技巧",
+  "title": " ${keyword} ：详细使用指南与实用技巧",
   "slug": "english-keyword-slug-only",
-  "metaDescription": "本文针对${keyword}提供全面实用的中文指南，从正版下载、注册登录、验证码接收到中文包设置与隐私防护，助您轻松掌握Telegram核心功能。",
+  "metaDescription": "针对 ${keyword} ，本文提供全面实用的中文指南，从正版下载、注册登录、验证码接收到中文包设置与隐私防护，助您轻松掌握Telegram核心功能。",
   "focusKeyword": "${keyword}",
-  "semanticKeywordsUsed": ["Telegram中文版", "电报注册", "验证码", "隐私保护", "双重认证", "频道订阅"],
+  "semanticKeywordsUsed": ["Telegram中文版", "电报设置", "验证码", "隐私保护", "双重认证", "频道订阅"],
   "outline": [
-    { "level": "h2", "heading": "自然段落标题（无任何数字前缀）", "estimatedCharacters": 1000, "description": "深入阐述..." },
+    { "level": "h2", "heading": "自然段落标题（无数字，无链接）", "estimatedCharacters": 1000, "description": "深入阐述..." },
     { "level": "h3", "heading": "自然子标题", "estimatedCharacters": 800, "description": "详细解析..." }
   ],
   "faqItems": [
@@ -120,9 +122,9 @@ Generate the complete 10,000+ Chinese character master guide in JSON format:
     { "question": "常见问题4？", "answer": "简明扼要的答案（50-100字）" },
     { "question": "常见问题5？", "answer": "简明扼要的答案（50-100字）" }
   ],
-  "contentHtml": "<h2>...</h2><p>...</p><!-- IN_ARTICLE_IMAGE_HERE --><h2>...</h2><p>...</p><h2>常见问题解答（FAQ）</h2>...",
-  "featuredImagePrompt": "High quality English prompt for OpenAI image: modern 3D tech concept representing ${keyword} with Telegram blue theme, sleek smartphone UI, clean aesthetic, no text, no watermark",
-  "inArticleImagePrompt": "High quality English prompt for OpenAI image: technical workflow illustration of ${keyword}, modern digital app mockup, clean style, no text, no watermark",
+  "contentHtml": "<h2>...</h2><p>对于关注 ${keyword} 的用户而言，...</p><!-- IN_ARTICLE_IMAGE_HERE --><h2>...</h2><p>...</p>",
+  "featuredImagePrompt": "English prompt tailored specifically for ${keyword} with modern 3D tech concept, sleek smartphone UI, clean aesthetic, no text, no watermark",
+  "inArticleImagePrompt": "English prompt tailored specifically for ${keyword} technical workflow illustration, modern digital app mockup, clean style, no text, no watermark",
   "internalLinksUsed": [
     { "title": "页面标题", "url": "https://tgcenters.com/..." }
   ],
@@ -149,16 +151,22 @@ Generate the complete 10,000+ Chinese character master guide in JSON format:
   if (Array.isArray(parsed.outline)) {
     parsed.outline = parsed.outline.map((item: any) => ({
       ...item,
-      heading: item.heading.replace(/^([一二三四五六七八九十]+[、. ]|\d+(\.\d+)*[、. ]|步骤[一二三四五\d]+[：: ]*)/, '').trim(),
+      heading: item.heading.replace(/^([一二三四五六七八九十]+[、. ]|\d+(\.\d+)*[、. ]|步骤[一二三四五\d]+[：: ]*)/, '').replace(/<[^>]*>/g, '').trim(),
     }));
   }
 
   let finalContentHtml = parsed.contentHtml || '';
 
-  // Clean H2, H3, H4 tags from leading numbers
+  // Clean H2, H3, H4 tags: remove any links inside headings and remove leading numbers
   finalContentHtml = finalContentHtml.replace(
-    /(<h[2-4][^>]*>)\s*([一二三四五六七八九十]+[、. ]|\d+(\.\d+)*[、. ]|步骤[一二三四五\d]+[：: ]*)/gi,
-    '$1'
+    /(<h[2-4][^>]*>)([\s\S]*?)(<\/h[2-4]>)/gi,
+    (_match: string, openTag: string, innerText: string, closeTag: string) => {
+      // Remove any <a> tags from heading text
+      let cleaned = innerText.replace(/<a[^>]*>(.*?)<\/a>/gi, '$1');
+      // Remove numeric prefixes
+      cleaned = cleaned.replace(/^([一二三四五六七八九十]+[、. ]|\d+(\.\d+)*[、. ]|步骤[一二三四五\d]+[：: ]*)/, '').trim();
+      return `${openTag}${cleaned}${closeTag}`;
+    }
   );
 
   // Remove any early placeholder from model output
@@ -181,7 +189,7 @@ Generate the complete 10,000+ Chinese character master guide in JSON format:
     finalContentHtml = finalContentHtml + '\n<!-- IN_ARTICLE_IMAGE_HERE -->\n';
   }
 
-  // Ensure internal links exist in contentHtml
+  // Ensure internal links exist in contentHtml ONLY inside <p> paragraphs (NEVER in headings)
   const defaultInternalLinks = [
     { title: 'Telegram下载', url: 'https://tgcenters.com/telegram-download/', kw: 'Telegram下载' },
     { title: 'Telegram注册教程', url: 'https://tgcenters.com/telegram-registration-tutorial/', kw: 'Telegram注册' },
@@ -196,19 +204,23 @@ Generate the complete 10,000+ Chinese character master guide in JSON format:
     if (finalContentHtml.includes(`href="${item.url}"`) || finalContentHtml.includes(`href='${item.url}'`)) {
       actualInternalLinksUsed.push({ title: item.title, url: item.url });
     } else {
-      // Smartly inject link on first occurrence of keyword
-      const regex = new RegExp(`(?<!<a[^>]*>)(${item.kw})(?![^<]*</a>)`, 'i');
-      if (regex.test(finalContentHtml)) {
-        finalContentHtml = finalContentHtml.replace(
-          regex,
-          `<a href="${item.url}" title="${item.title}">$1</a>`
-        );
+      // Smartly inject link ONLY inside <p> paragraphs
+      let injected = false;
+      finalContentHtml = finalContentHtml.replace(/(<p[^>]*>)([\s\S]*?)(<\/p>)/gi, (fullP: string, pOpen: string, pText: string, pClose: string) => {
+        if (!injected && !pText.includes('<a ') && pText.includes(item.kw)) {
+          injected = true;
+          const newText = pText.replace(item.kw, `<a href="${item.url}" title="${item.title}">${item.kw}</a>`);
+          return `${pOpen}${newText}${pClose}`;
+        }
+        return fullP;
+      });
+      if (injected) {
         actualInternalLinksUsed.push({ title: item.title, url: item.url });
       }
     }
   }
 
-  // Ensure external links exist in contentHtml
+  // Ensure external links exist in contentHtml ONLY inside <p> paragraphs
   const defaultExternalLinks = [
     { title: 'Telegram官网', url: 'https://telegram.org', kw: 'Telegram官方' },
     { title: 'Telegram官方FAQ', url: 'https://telegram.org/faq', kw: '官方常见问题' },
@@ -219,15 +231,18 @@ Generate the complete 10,000+ Chinese character master guide in JSON format:
     if (finalContentHtml.includes(ext.url)) {
       actualExternalLinksUsed.push({ title: ext.title, url: ext.url });
     } else {
-      const regex = new RegExp(`(?<!<a[^>]*>)(${ext.kw})(?![^<]*</a>)`, 'i');
-      if (regex.test(finalContentHtml)) {
-        finalContentHtml = finalContentHtml.replace(
-          regex,
-          `<a href="${ext.url}" target="_blank" rel="noopener noreferrer">$1</a>`
-        );
+      let injectedExt = false;
+      finalContentHtml = finalContentHtml.replace(/(<p[^>]*>)([\s\S]*?)(<\/p>)/gi, (fullP: string, pOpen: string, pText: string, pClose: string) => {
+        if (!injectedExt && !pText.includes('<a ') && pText.includes(ext.kw)) {
+          injectedExt = true;
+          const newText = pText.replace(ext.kw, `<a href="${ext.url}" target="_blank" rel="noopener noreferrer">${ext.kw}</a>`);
+          return `${pOpen}${newText}${pClose}`;
+        }
+        return fullP;
+      });
+      if (injectedExt) {
         actualExternalLinksUsed.push({ title: ext.title, url: ext.url });
       } else {
-        // Append natural footnote if not matched
         actualExternalLinksUsed.push({ title: ext.title, url: ext.url });
       }
     }
@@ -314,30 +329,39 @@ Generate the complete 10,000+ Chinese character master guide in JSON format:
     safeSlug = 'telegram-guide';
   }
 
-  // Ensure main keyword is distinctly separated in Title (not merged)
-  let safeTitle = (parsed.title || '').trim();
+  // Ensure main keyword is distinctly separated with spaces in Title (e.g., " telegram怎么用 ：...")
+  let safeTitle = (parsed.title || '').trim().replace(/【|】|\[|\]/g, '');
   if (!safeTitle.includes(keyword)) {
-    safeTitle = `${keyword}：${safeTitle}`;
-  } else if (!safeTitle.startsWith(keyword) && !safeTitle.includes(`：`) && !safeTitle.includes(`-`)) {
-    // If keyword is merged inside without clean separator, isolate it cleanly
-    safeTitle = `${keyword}：${safeTitle.replace(keyword, '').trim()}`;
+    safeTitle = ` ${keyword} ：${safeTitle}`;
+  } else {
+    // Ensure clean space separation around keyword
+    safeTitle = safeTitle.replace(keyword, ` ${keyword} `).replace(/\s+/g, ' ').trim();
+    if (!safeTitle.includes('：') && !safeTitle.includes('-')) {
+      safeTitle = safeTitle.replace(new RegExp(`\\s*${keyword}\\s*`), ` ${keyword} ： `);
+    }
   }
 
-  // Ensure main keyword is prominently standalone at beginning of Meta Description
-  let safeMetaDesc = (parsed.metaDescription || '').trim();
+  // Ensure main keyword is prominently standalone with spaces at beginning of Meta Description
+  let safeMetaDesc = (parsed.metaDescription || '').trim().replace(/【|】|\[|\]/g, '');
   if (!safeMetaDesc.includes(keyword)) {
-    safeMetaDesc = `本文针对${keyword}提供全面实用的中文指南。${safeMetaDesc}`;
+    safeMetaDesc = `针对 ${keyword} ，本文提供全面实用的中文指南。${safeMetaDesc}`;
+  } else {
+    safeMetaDesc = safeMetaDesc.replace(keyword, ` ${keyword} `).replace(/\s+/g, ' ').trim();
   }
 
-  // Ensure first paragraph contains the standalone main keyword cleanly in the first 60 characters
+  // Remove any bracketed keyword formatting in contentHtml
+  finalContentHtml = finalContentHtml.replace(new RegExp(`【\\s*${keyword}\\s*】`, 'g'), ` ${keyword} `);
+  finalContentHtml = finalContentHtml.replace(new RegExp(`\\[\\s*${keyword}\\s*\\]`, 'g'), ` ${keyword} `);
+
+  // Ensure first paragraph contains the standalone main keyword cleanly in the first 60 characters with spaces
   const firstPOpen = finalContentHtml.indexOf('<p');
   if (firstPOpen !== -1) {
     const firstPClose = finalContentHtml.indexOf('</p>', firstPOpen);
     if (firstPClose !== -1) {
       const firstPContent = finalContentHtml.slice(firstPOpen, firstPClose + 4);
       if (!firstPContent.slice(0, 100).includes(keyword)) {
-        // Prepend clean introductory clause with exact standalone keyword
-        const cleanInsert = `对于关注【${keyword}】的用户而言，掌握官方正版的操作与设置至关重要。`;
+        // Prepend clean introductory clause with exact spaced keyword and no brackets
+        const cleanInsert = `对于关注 ${keyword} 的用户而言，掌握官方正版的操作与设置至关重要。`;
         finalContentHtml = finalContentHtml.slice(0, firstPOpen) +
           firstPContent.replace(/(<p[^>]*>)/i, `$1${cleanInsert}`) +
           finalContentHtml.slice(firstPClose + 4);
