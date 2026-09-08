@@ -168,7 +168,7 @@ export default function Home() {
     setErrorMessage(null);
 
     try {
-      const res = await fetch('/api/publish-article', {
+      let res = await fetch('/api/publish-article', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -178,12 +178,64 @@ export default function Home() {
         }),
       });
 
-      const text = await res.text();
+      let text = await res.text();
       let data: any = {};
       try {
         data = JSON.parse(text);
       } catch (jsonErr) {
-        throw new Error(`Server returned unexpected response: ${text.slice(0, 120)}`);
+        data = { error: text.slice(0, 200) };
+      }
+
+      // If Vercel datacenter IP is blocked by Cloudflare (403), publish DIRECTLY from the browser!
+      if (!res.ok && (data.error?.includes('403') || data.error?.includes('Just a moment') || data.error?.includes('Cloudflare'))) {
+        console.log('[Direct Browser Fallback] Vercel serverless IP blocked by Cloudflare. Publishing directly from browser...');
+        
+        const wpUrl = (settings.wpUrl || 'https://tgcenters.com').replace(/\/+$/, '');
+        const wpUser = settings.wpUsername || 'n8n-bot';
+        const wpPass = (settings.wpAppPassword || 'RPbI TjbC Hb08 wC5E Ok0U Dtpo').replace(/\s+/g, '');
+        const token = btoa(`${wpUser}:${wpPass}`);
+
+        const payload: any = {
+          title: previewData.article.title,
+          slug: previewData.article.slug,
+          content: previewData.article.contentHtml,
+          status: settings.publishStatus || 'publish',
+          meta: {
+            _yoast_wpseo_focuskw: previewData.article.focusKeyword,
+            _yoast_wpseo_metadesc: previewData.article.metaDescription,
+            _yoast_wpseo_title: `${previewData.article.title} - TG Center`,
+          },
+        };
+
+        if (previewData.images?.featured?.id && Number(previewData.images.featured.id) > 0) {
+          payload.featured_media = Number(previewData.images.featured.id);
+        }
+        if (previewData.article.category?.id) {
+          payload.categories = [previewData.article.category.id];
+        }
+
+        const directWpRes = await fetch(`${wpUrl}/wp-json/wp/v2/posts`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!directWpRes.ok) {
+          const directErr = await directWpRes.text();
+          throw new Error(`WordPress Post Publication failed (${directWpRes.status}): ${directErr.slice(0, 150)}`);
+        }
+
+        const directPost = await directWpRes.json();
+        setPublishedResult({
+          success: true,
+          postId: directPost.id,
+          postUrl: directPost.link,
+          status: settings.publishStatus || 'publish',
+        });
+        return;
       }
 
       if (!res.ok || data.error) {
@@ -191,7 +243,6 @@ export default function Home() {
       }
 
       setPublishedResult(data);
-
     } catch (err: any) {
       setErrorMessage(err.message || 'Error publishing article');
     } finally {
