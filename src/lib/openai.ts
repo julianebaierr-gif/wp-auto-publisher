@@ -170,23 +170,23 @@ Generate the complete 10,000+ Chinese character exhaustive guide in JSON format:
   let currentChineseLen = finalContentHtml.replace(/<[^>]*>/g, '').replace(/\s+/g, '').length;
   console.log(`[OpenAI First Pass Length] Pure Chinese characters: ${currentChineseLen}`);
 
-  // If below 10,000 characters, execute seamless in-depth expansion pass to hit 10,000+ characters!
-  if (currentChineseLen < 10000) {
+  // Guaranteed Loop Expansion to ensure 10,000+ Chinese characters!
+  let expansionPass = 0;
+  while (currentChineseLen < 10000 && expansionPass < 3) {
+    expansionPass++;
     try {
-      console.log(`[OpenAI Expansion] Expanding content from ${currentChineseLen} to 10,000+ Chinese characters with deep narrative practical sections...`);
-      const expansionPrompt = `The following Chinese article currently has ${currentChineseLen} Chinese characters, but MUST exceed 10,000 Chinese characters.
-Focus Keyword: "${keyword}".
+      console.log(`[OpenAI Expansion Pass ${expansionPass}] Expanding from ${currentChineseLen} to 10,000+ Chinese characters...`);
+      const neededChars = 10000 - currentChineseLen;
+      const expansionPrompt = `The Chinese article currently has ${currentChineseLen} Chinese characters, but MUST reach 10,000+ characters (needs at least ${neededChars} more characters).
+Focus Topic: "${keyword}".
 
-Please generate 6 to 8 additional, highly in-depth, completely unique, professional practical sections (H2, H3, H4) with extensive narrative paragraphs (<p class="wp-block-paragraph">...</p>) expanding deeply on advanced features, day-to-day user scenarios, security configurations, practical tips, and detailed troubleshooting specifically for "${keyword}".
+Please generate 6 to 10 additional extensive, highly in-depth, completely unique, professional practical sections (H2, H3, H4) with rich narrative paragraphs (<p class="wp-block-paragraph">...</p>) explaining advanced features, user scenarios, security configurations, practical tips, and detailed troubleshooting.
 
 Requirements:
-- Pure narrative flowing paragraphs (5-7 paragraphs per section, 150-300 characters each).
-- NO bullet points, NO numeric prefixes (no 1. 2. 一、 二、).
+- Pure narrative flowing paragraphs (5-8 paragraphs per section, 200-300 characters each).
+- NO bullet points, NO numeric prefixes.
 - NO links inside headings.
 - Strictly relevant to "${keyword}".
-
-Current Outline/Sections already covered:
-${(parsed.outline || []).map((o: any) => o.heading).join(', ')}
 
 Return valid JSON:
 {
@@ -208,11 +208,14 @@ Return valid JSON:
       const expParsed = JSON.parse(expText);
       if (expParsed.additionalContentHtml) {
         finalContentHtml = finalContentHtml + '\n' + expParsed.additionalContentHtml;
-        const newLen = finalContentHtml.replace(/<[^>]*>/g, '').replace(/\s+/g, '').length;
-        console.log(`[OpenAI Expanded Length] Total pure Chinese characters now: ${newLen}`);
+        currentChineseLen = finalContentHtml.replace(/<[^>]*>/g, '').replace(/\s+/g, '').length;
+        console.log(`[OpenAI Expanded Length Pass ${expansionPass}] Total pure Chinese characters now: ${currentChineseLen}`);
+      } else {
+        break;
       }
     } catch (expErr: any) {
       console.warn('Content expansion warning:', expErr.message);
+      break;
     }
   }
 
@@ -562,38 +565,59 @@ Return valid JSON:
   finalContentHtml = finalContentHtml.replace(new RegExp(`【\\s*${keyword}\\s*】`, 'g'), ` ${keyword} `);
   finalContentHtml = finalContentHtml.replace(new RegExp(`\\[\\s*${keyword}\\s*\\]`, 'g'), ` ${keyword} `);
 
-  // Ensure first paragraph contains the standalone main keyword cleanly in the first 60 characters with spaces
+  // STRICT KEYPHRASE DENSITY & PLACEMENT ENFORCER:
+  // User Requirement:
+  // 1. Keyword must appear in the 1st paragraph EXACTLY 1 TIME.
+  // 2. Keyword must appear in the ENTIRE article EXACTLY 2 TIMES (never 3 or more, never 0).
+
+  const kwRegex = new RegExp(keyword, 'g');
+
+  // Step 1: Ensure first paragraph has EXACTLY 1 occurrence
   const firstPOpen = finalContentHtml.indexOf('<p');
   if (firstPOpen !== -1) {
     const firstPClose = finalContentHtml.indexOf('</p>', firstPOpen);
     if (firstPClose !== -1) {
-      const firstPContent = finalContentHtml.slice(firstPOpen, firstPClose + 4);
-      if (!firstPContent.slice(0, 100).includes(keyword)) {
-        // Prepend clean introductory clause with exact spaced keyword and no brackets
-        const cleanInsert = `对于关注 ${keyword} 的用户而言，掌握官方正版的操作与设置至关重要。`;
-        finalContentHtml = finalContentHtml.slice(0, firstPOpen) +
-          firstPContent.replace(/(<p[^>]*>)/i, `$1${cleanInsert}`) +
-          finalContentHtml.slice(firstPClose + 4);
-      }
-    }
-  }
+      let firstP = finalContentHtml.slice(firstPOpen, firstPClose + 4);
+      let restContent = finalContentHtml.slice(firstPClose + 4);
 
-  // STRICT YOAST KEYPHRASE DENSITY CONTROLLER:
-  // Yoast recommends 1 to 2 occurrences for short texts or up to 2-3 for long texts.
-  // Never exceed 2 exact occurrences in the body content so Yoast NEVER turns red for over-optimization!
-  const kwRegex = new RegExp(keyword, 'g');
-  const totalMatches = (finalContentHtml.match(kwRegex) || []).length;
-  if (totalMatches > 2) {
-    let matchCount = 0;
-    finalContentHtml = finalContentHtml.replace(kwRegex, (matched: string) => {
-      matchCount++;
-      // Keep the 1st match (intro) and 2nd match (middle).
-      // Replace any 3rd, 4th, or subsequent match with natural contextual synonyms so it never over-optimizes!
-      if (matchCount <= 2) {
-        return matched;
+      // Check how many times keyword is in first paragraph
+      const firstPMatchCount = (firstP.match(kwRegex) || []).length;
+      if (firstPMatchCount === 0) {
+        // Add cleanly at beginning of first paragraph
+        const cleanInsert = `对于关注 ${keyword} 的用户而言，掌握官方正版的操作与设置至关重要。`;
+        firstP = firstP.replace(/(<p[^>]*>)/i, `$1${cleanInsert}`);
+      } else if (firstPMatchCount > 1) {
+        // Keep only the first occurrence in 1st paragraph, replace subsequent ones
+        let countInFirst = 0;
+        firstP = firstP.replace(kwRegex, (m: string) => {
+          countInFirst++;
+          return countInFirst === 1 ? m : '相关功能';
+        });
       }
-      return '该操作';
-    });
+
+      // Step 2: Now in restContent, allow EXACTLY 1 occurrence (total in entire article = 2)
+      let countInRest = 0;
+      restContent = restContent.replace(kwRegex, (m: string) => {
+        countInRest++;
+        return countInRest === 1 ? m : '该功能';
+      });
+
+      // If restContent had 0 occurrences, inject 1 occurrence in a middle paragraph
+      if (countInRest === 0) {
+        let injectedMiddle = false;
+        let pIdx = 0;
+        restContent = restContent.replace(/(<p[^>]*>)([\s\S]*?)(<\/p>)/gi, (fullP: string, pOpen: string, pText: string, pClose: string) => {
+          pIdx++;
+          if (!injectedMiddle && pIdx >= 4 && !pText.includes('<a ')) {
+            injectedMiddle = true;
+            return `${pOpen}${pText} 熟练运用 ${keyword} 可以显著提高日常沟通与协作体验。${pClose}`;
+          }
+          return fullP;
+        });
+      }
+
+      finalContentHtml = finalContentHtml.slice(0, firstPOpen) + firstP + restContent;
+    }
   }
 
   // Auto-determine best category
