@@ -351,16 +351,21 @@ export async function publishPostToWordPress({
   const baseUrl = getWpBaseUrl(wpUrl);
   const authHeaders = getWpAuthHeaders(username, appPassword);
 
+  // Ensure 'Telegram' is always capitalized in title, focusKeyword, and metaDescription
+  const cleanTitle = (title || '').replace(/telegram/gi, 'Telegram').trim();
+  const cleanFocusKw = (focusKeyword || '').replace(/telegram/gi, 'Telegram').trim();
+  const cleanMetaDesc = (metaDescription || '').replace(/telegram/gi, 'Telegram').trim();
+
   const payload: Record<string, any> = {
-    title,
+    title: cleanTitle,
     slug,
     content: contentHtml,
     status: date ? 'future' : status,
     // Yoast SEO specific meta values
     meta: {
-      _yoast_wpseo_focuskw: focusKeyword,
-      _yoast_wpseo_metadesc: metaDescription,
-      _yoast_wpseo_title: title,
+      _yoast_wpseo_focuskw: cleanFocusKw,
+      _yoast_wpseo_metadesc: cleanMetaDesc,
+      _yoast_wpseo_title: cleanTitle,
     },
   };
 

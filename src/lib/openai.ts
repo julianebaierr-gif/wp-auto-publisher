@@ -22,7 +22,7 @@ export function getOpenAIClient(apiKey?: string): OpenAI {
  * - In-article image positioned strictly in the middle
  */
 export async function generateSeoArticle({
-  keyword,
+  keyword: rawKeyword,
   existingPosts,
   categories,
   apiKey,
@@ -33,6 +33,9 @@ export async function generateSeoArticle({
   apiKey?: string;
 }): Promise<GeneratedArticle> {
   const openai = getOpenAIClient(apiKey);
+
+  // Normalize keyword: auto capitalize 'telegram' to 'Telegram'
+  const keyword = (rawKeyword || '').replace(/telegram/gi, 'Telegram').trim();
 
   // Curated internal link candidates with full Chinese context
   const linkCandidates = (existingPosts && existingPosts.length > 0 ? existingPosts.slice(0, 20) : [
@@ -525,8 +528,11 @@ Return valid JSON:
     safeSlug = 'telegram-guide';
   }
 
-  // Ensure main keyword is distinctly separated with spaces in Title (e.g., " telegram怎么用 ：...")
+  // Ensure main keyword is distinctly separated with spaces in Title (e.g., " Telegram怎么用 ：...")
+  // Always guarantee 'Telegram' has capitalized 'T'
   let safeTitle = (parsed.title || '').trim().replace(/【|】|\[|\]/g, '');
+  safeTitle = safeTitle.replace(/telegram/gi, 'Telegram');
+
   if (!safeTitle.includes(keyword)) {
     safeTitle = ` ${keyword} ：${safeTitle}`;
   } else {
@@ -536,14 +542,18 @@ Return valid JSON:
       safeTitle = safeTitle.replace(new RegExp(`\\s*${keyword}\\s*`), ` ${keyword} ： `);
     }
   }
+  // Double ensure T is capitalized
+  safeTitle = safeTitle.replace(/telegram/gi, 'Telegram');
 
   // Ensure main keyword is prominently standalone with spaces at beginning of Meta Description
   let safeMetaDesc = (parsed.metaDescription || '').trim().replace(/【|】|\[|\]/g, '');
+  safeMetaDesc = safeMetaDesc.replace(/telegram/gi, 'Telegram');
   if (!safeMetaDesc.includes(keyword)) {
     safeMetaDesc = `针对 ${keyword} ，本文提供全面实用的中文指南。${safeMetaDesc}`;
   } else {
     safeMetaDesc = safeMetaDesc.replace(keyword, ` ${keyword} `).replace(/\s+/g, ' ').trim();
   }
+  safeMetaDesc = safeMetaDesc.replace(/telegram/gi, 'Telegram');
 
   // Remove any bracketed keyword formatting in contentHtml
   finalContentHtml = finalContentHtml.replace(new RegExp(`【\\s*${keyword}\\s*】`, 'g'), ` ${keyword} `);
