@@ -27,28 +27,32 @@ export async function POST(req: NextRequest) {
 
     const slug = article.slug || 'trading-article';
 
-    // 1. Upload Featured Image to WordPress Media Library
-    let featuredMediaId: number | undefined;
-    let featuredMediaSourceUrl: string | undefined;
+    // 1. Featured Image: use already uploaded media or upload if needed
+    let featuredMediaId: number | undefined = images?.featured?.id;
+    let featuredMediaSourceUrl: string | undefined = images?.featured?.url;
 
-    if (images?.featured?.url) {
-      console.log('Uploading featured image to WordPress media library...');
-      const featuredMedia = await uploadImageToWordPress({
-        imageUrl: images.featured.url,
-        filename: `${slug}-featured.png`,
-        title: `${article.title} - Featured Image`,
-        altText: images.featured.alt || `${article.focusKeyword} - Telegram官方指南`,
-        wpUrl,
-        username: wpUsername,
-        appPassword: wpAppPassword,
-      });
-      featuredMediaId = featuredMedia.id;
-      featuredMediaSourceUrl = featuredMedia.sourceUrl;
+    if (!featuredMediaId && images?.featured?.url) {
+      if (images.featured.url.includes('/wp-content/uploads/')) {
+        featuredMediaSourceUrl = images.featured.url;
+      } else {
+        console.log('Uploading featured image to WordPress media library...');
+        const featuredMedia = await uploadImageToWordPress({
+          imageUrl: images.featured.url,
+          filename: `${slug}-featured.png`,
+          title: `${article.title} - Featured Image`,
+          altText: images.featured.alt || `${article.focusKeyword} - Telegram官方指南`,
+          wpUrl,
+          username: wpUsername,
+          appPassword: wpAppPassword,
+        });
+        featuredMediaId = featuredMedia.id;
+        featuredMediaSourceUrl = featuredMedia.sourceUrl;
+      }
     }
 
-    // 2. Upload In-Article Image and replace URL in HTML if needed
+    // 2. In-Article Image: check if already in WordPress media library
     let finalContentHtml = article.contentHtml;
-    if (images?.inArticle?.url) {
+    if (!images?.inArticle?.id && images?.inArticle?.url && !images.inArticle.url.includes('/wp-content/uploads/')) {
       console.log('Uploading in-article image to WordPress media library...');
       const inArticleMedia = await uploadImageToWordPress({
         imageUrl: images.inArticle.url,
@@ -60,7 +64,6 @@ export async function POST(req: NextRequest) {
         appPassword: wpAppPassword,
       });
 
-      // Replace temporary DALL-E URL in content with permanent WordPress media URL
       finalContentHtml = finalContentHtml.split(images.inArticle.url).join(inArticleMedia.sourceUrl);
     }
 

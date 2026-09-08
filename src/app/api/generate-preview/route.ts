@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchExistingPosts } from '@/lib/wordpress';
+import { fetchExistingPosts, uploadImageToWordPress } from '@/lib/wordpress';
 import { generateSeoArticle, generateDalleImage } from '@/lib/openai';
 
 export const maxDuration = 300;
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       apiKey: openaiApiKey,
     });
 
-    console.log(`[Preview Step 3/3] Generating 2 images with OpenAI (gpt-image-1-mini) for preview...`);
+    console.log(`[Preview Step 3/4] Generating 2 images with OpenAI (gpt-image-1-mini)...`);
     const [rawFeaturedImage, rawInArticleImage] = await Promise.all([
       generateDalleImage({
         prompt: article.featuredImagePrompt,
@@ -53,8 +53,34 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
-    const featuredImageUrl = rawFeaturedImage;
-    const inArticleImageUrl = rawInArticleImage;
+    const slug = article.slug || trimmedKeyword.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const wpUsername = settings.wpUsername || process.env.WORDPRESS_USERNAME || 'n8n-bot';
+    const wpAppPassword = settings.wpAppPassword || process.env.WORDPRESS_APP_PASSWORD || 'RPbI TjbC Hb08 wC5E Ok0U Dtpo';
+
+    console.log(`[Preview Step 4/4] Uploading images to WordPress Media Library directly...`);
+    const [featuredMedia, inArticleMedia] = await Promise.all([
+      uploadImageToWordPress({
+        imageUrl: rawFeaturedImage,
+        filename: `${slug}-featured.png`,
+        title: `${article.title} - Featured Image`,
+        altText: `${trimmedKeyword} - Telegram官方使用与下载指南`,
+        wpUrl,
+        username: wpUsername,
+        appPassword: wpAppPassword,
+      }),
+      uploadImageToWordPress({
+        imageUrl: rawInArticleImage,
+        filename: `${slug}-diagram.png`,
+        title: `${article.title} - 操作流程与安全设置图解`,
+        altText: `${trimmedKeyword} - Telegram核心设置与操作流程`,
+        wpUrl,
+        username: wpUsername,
+        appPassword: wpAppPassword,
+      }),
+    ]);
+
+    const featuredImageUrl = featuredMedia.sourceUrl;
+    const inArticleImageUrl = inArticleMedia.sourceUrl;
 
     // Construct preview content with in-article image preview
     const inArticleImageHtml = `
@@ -96,10 +122,12 @@ export async function POST(req: NextRequest) {
       },
       images: {
         featured: {
+          id: featuredMedia.id,
           url: featuredImageUrl,
           alt: `${trimmedKeyword} - Telegram官方使用与下载指南`,
         },
         inArticle: {
+          id: inArticleMedia.id,
           url: inArticleImageUrl,
           alt: `${trimmedKeyword} - 操作流程与安全设置图解`,
         },
