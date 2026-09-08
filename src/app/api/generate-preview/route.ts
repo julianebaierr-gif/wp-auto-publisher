@@ -53,13 +53,8 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
-    // Save image to server memory store and disk
-    const { savePreviewImage } = await import('@/lib/imageStore');
-    const featuredImgId = await savePreviewImage(rawFeaturedImage);
-    const inArticleImgId = await savePreviewImage(rawInArticleImage);
-
-    const featuredImageUrl = `/temp_images/${featuredImgId}.png`;
-    const inArticleImageUrl = `/temp_images/${inArticleImgId}.png`;
+    const featuredImageUrl = rawFeaturedImage;
+    const inArticleImageUrl = rawInArticleImage;
 
     // Construct preview content with in-article image preview
     const inArticleImageHtml = `
