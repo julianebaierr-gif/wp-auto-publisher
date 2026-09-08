@@ -111,7 +111,7 @@ Generate a complete, comprehensive, publication-ready article in JSON format wit
 }
 
 /**
- * Generate image using OpenAI DALL-E 3
+ * Generate image using OpenAI DALL-E (dall-e-3 with automatic dall-e-2 fallback)
  */
 export async function generateDalleImage({
   prompt,
@@ -124,18 +124,42 @@ export async function generateDalleImage({
 }): Promise<string> {
   const openai = getOpenAIClient(apiKey);
 
-  const response = await openai.images.generate({
-    model: 'dall-e-3',
-    prompt: `${prompt}. Ultra-high resolution, clean aesthetic, financial trading theme, cinematic lighting, professional digital art, absolutely no words, no letters, no watermark.`,
-    n: 1,
-    size: aspect,
-    quality: 'standard',
-  });
+  // 1. First attempt: DALL-E 3
+  try {
+    const response = await openai.images.generate({
+      model: 'dall-e-3',
+      prompt: `${prompt}. Ultra-high resolution, clean aesthetic, financial trading theme, cinematic lighting, professional digital art, absolutely no words, no letters, no watermark.`,
+      n: 1,
+      size: aspect,
+      quality: 'standard',
+    });
 
-  const imageUrl = response.data?.[0]?.url;
-  if (!imageUrl) {
-    throw new Error('DALL-E 3 did not return an image URL');
+    const imageUrl = response.data?.[0]?.url;
+    if (imageUrl) return imageUrl;
+  } catch (err: any) {
+    console.warn('DALL-E 3 generation failed or model not available on this API key:', err.message);
+    
+    // 2. Second attempt: DALL-E 2 fallback (supported across all OpenAI tiers)
+    try {
+      console.log('Attempting fallback with dall-e-2 (1024x1024)...');
+      const fallbackResponse = await openai.images.generate({
+        model: 'dall-e-2',
+        prompt: `${prompt.slice(0, 800)}. Professional trading illustration, 4k digital art, clean finance charts.`,
+        n: 1,
+        size: '1024x1024',
+      });
+
+      const fallbackUrl = fallbackResponse.data?.[0]?.url;
+      if (fallbackUrl) return fallbackUrl;
+    } catch (dalle2Err: any) {
+      console.warn('DALL-E 2 also failed:', dalle2Err.message);
+      
+      // 3. Fallback: High-resolution finance curated imagery (guarantees post never fails)
+      const encodedPrompt = encodeURIComponent(prompt.slice(0, 50));
+      return `https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80`;
+    }
   }
 
-  return imageUrl;
+  return `https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80`;
 }
+

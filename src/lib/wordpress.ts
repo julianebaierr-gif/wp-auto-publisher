@@ -75,11 +75,15 @@ export async function uploadImageToWordPress({
   const baseUrl = getWpBaseUrl(wpUrl);
   const authHeaders = getWpAuthHeaders(username, appPassword);
 
-  // Download image from OpenAI DALL-E URL
+  // Download image
   const imageRes = await fetch(imageUrl);
   if (!imageRes.ok) {
-    throw new Error(`Failed to download generated image from OpenAI: ${imageRes.statusText}`);
+    throw new Error(`Failed to download generated image: ${imageRes.statusText}`);
   }
+
+  const contentType = imageRes.headers.get('content-type') || 'image/jpeg';
+  const extension = contentType.includes('png') ? 'png' : 'jpg';
+  const cleanFilename = filename.endsWith(`.${extension}`) ? filename : `${filename}.${extension}`;
 
   const arrayBuffer = await imageRes.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
@@ -89,11 +93,12 @@ export async function uploadImageToWordPress({
     method: 'POST',
     headers: {
       ...authHeaders,
-      'Content-Disposition': `attachment; filename="${filename}"`,
-      'Content-Type': 'image/png',
+      'Content-Disposition': `attachment; filename="${cleanFilename}"`,
+      'Content-Type': contentType,
     },
     body: buffer,
   });
+
 
   if (!uploadRes.ok) {
     const errBody = await uploadRes.text();
