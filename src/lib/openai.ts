@@ -34,8 +34,9 @@ You write engaging, authoritative, highly accurate, and in-depth articles relate
 
 CRITICAL LANGUAGE & CONTENT REQUIREMENTS:
 1. LANGUAGE: The entire article content (Title, Meta Description, Headings, Paragraphs, FAQs) MUST be written in Simplified Chinese (简体中文).
-2. ARTICLE LENGTH: The Chinese text content MUST be between 1000 and 1500 Chinese characters (至少1000至1500个中文字符), richly informative, complete with trading explanations, examples, step-by-step trading rules, and FAQs.
+2. ARTICLE LENGTH (STRICT): The Chinese text MUST be at least 1000 to 1500 Chinese characters (正文必须写得非常详尽充实，包含原理详解、图表应用步骤、常见误区以及常见问题解答FAQ，字数严格在1000到1500个中文字符之间). Do NOT write short summaries.
 3. SLUG REQUIREMENT: The "slug" MUST BE IN PURE ENGLISH (lowercase, hyphenated, keyword-rich in English, e.g. "rsi-divergence-trading-strategy" or "crypto-scalping-guide"). Do NOT use Chinese characters in the slug.
+
 
 CRITICAL YOAST SEO REQUIREMENTS FOR A PERFECT 100% GREEN SCORE:
 1. FOCUS KEYPHRASE: Use the target keyword as the exact focus keyphrase.
@@ -88,22 +89,23 @@ Generate a complete, publication-ready Chinese article (1000-1500 characters) wi
   const contentText = response.choices[0]?.message?.content || '{}';
   const parsed = JSON.parse(contentText);
 
-  // Count Chinese characters
+  // Normalize spaces for Chinese keyword checking
   const pureChineseText = (parsed.contentHtml || '').replace(/<[^>]*>/g, '').replace(/\s+/g, '');
   const wordCount = pureChineseText.length;
-  const kwLower = keyword.toLowerCase();
-  const titleLower = (parsed.title || '').toLowerCase();
-  const metaDescLower = (parsed.metaDescription || '').toLowerCase();
-  const contentLower = (parsed.contentHtml || '').toLowerCase();
+  const kwClean = keyword.replace(/\s+/g, '').toLowerCase();
+  const titleClean = (parsed.title || '').replace(/\s+/g, '').toLowerCase();
+  const metaDescClean = (parsed.metaDescription || '').replace(/\s+/g, '').toLowerCase();
+  const contentClean = (parsed.contentHtml || '').replace(/<[^>]*>/g, '').replace(/\s+/g, '').toLowerCase();
 
   const yoastScoreEstimate = {
-    keyphraseInTitle: titleLower.includes(kwLower),
-    keyphraseInMetaDesc: metaDescLower.includes(kwLower),
-    keyphraseInIntro: contentLower.slice(0, 300).includes(kwLower),
-    keyphraseInSubheadings: contentLower.includes(`<h2`) && contentLower.includes(kwLower),
+    keyphraseInTitle: titleClean.includes(kwClean),
+    keyphraseInMetaDesc: metaDescClean.includes(kwClean),
+    keyphraseInIntro: contentClean.slice(0, 200).includes(kwClean),
+    keyphraseInSubheadings: (parsed.contentHtml || '').toLowerCase().includes(kwClean),
     internalLinksCount: (parsed.internalLinksUsed || []).length,
     wordCount,
   };
+
 
   // Ensure slug is clean english
   let safeSlug = (parsed.slug || '')
@@ -129,7 +131,7 @@ Generate a complete, publication-ready Chinese article (1000-1500 characters) wi
 }
 
 /**
- * Generate image ONLY via OpenAI API (dall-e-3 -> dall-e-2)
+ * Generate image ONLY via OpenAI API (gpt-image-1 / dall-e-3 / dall-e-2)
  */
 export async function generateDalleImage({
   prompt,
@@ -142,9 +144,29 @@ export async function generateDalleImage({
 }): Promise<string> {
   const openai = getOpenAIClient(apiKey);
 
-  // 1. Try DALL-E 3 first
+  // 1. Try gpt-image-1 first (verified supported on this project key)
   try {
-    console.log('Generating image with dall-e-3...');
+    console.log('Generating image using OpenAI gpt-image-1...');
+    const response = await openai.images.generate({
+      model: 'gpt-image-1',
+      prompt: `${prompt}. High resolution digital art, clean financial charts, absolutely no text, no watermark.`,
+      n: 1,
+      size: '1024x1024',
+    });
+
+    const b64 = response.data?.[0]?.b64_json;
+    if (b64) {
+      return `data:image/png;base64,${b64}`;
+    }
+    const url = response.data?.[0]?.url;
+    if (url) return url;
+  } catch (err: any) {
+    console.warn(`gpt-image-1 failed (${err.message}), trying dall-e-3...`);
+  }
+
+  // 2. Try dall-e-3
+  try {
+    console.log('Generating image using OpenAI dall-e-3...');
     const response = await openai.images.generate({
       model: 'dall-e-3',
       prompt: `${prompt}. Ultra-high resolution, clean aesthetic, financial trading theme, cinematic lighting, professional digital art, strictly no words, no letters, no text, no watermark.`,
@@ -156,26 +178,27 @@ export async function generateDalleImage({
     const imageUrl = response.data?.[0]?.url;
     if (imageUrl) return imageUrl;
   } catch (err: any) {
-    console.warn(`DALL-E 3 failed (${err.message}). Falling back to dall-e-2...`);
+    console.warn(`dall-e-3 failed (${err.message}), trying dall-e-2...`);
   }
 
-  // 2. Fallback strictly to DALL-E 2 (OpenAI API only, no external third party)
+  // 3. Fallback to dall-e-2
   try {
-    console.log('Generating image with dall-e-2...');
-    const fallbackResponse = await openai.images.generate({
+    console.log('Generating image using OpenAI dall-e-2...');
+    const response = await openai.images.generate({
       model: 'dall-e-2',
-      prompt: `${prompt.slice(0, 950)}. Ultra clean financial trading concept, professional digital art, strictly no words, no text.`,
+      prompt: `${prompt.slice(0, 900)}. Ultra clean financial trading concept, professional digital art, strictly no words, no text.`,
       n: 1,
       size: '1024x1024',
     });
 
-    const fallbackUrl = fallbackResponse.data?.[0]?.url;
+    const fallbackUrl = response.data?.[0]?.url;
     if (fallbackUrl) return fallbackUrl;
-  } catch (dalle2Err: any) {
-    throw new Error(`OpenAI Image Generation Error: ${dalle2Err.message}. Please verify your OpenAI billing & image API quota.`);
+  } catch (err: any) {
+    throw new Error(`OpenAI Image Generation Error: ${err.message}`);
   }
 
-  throw new Error('OpenAI Image Generation did not return an image URL.');
+  throw new Error('OpenAI Image Generation did not return an image.');
 }
+
 
 

@@ -75,18 +75,32 @@ export async function uploadImageToWordPress({
   const baseUrl = getWpBaseUrl(wpUrl);
   const authHeaders = getWpAuthHeaders(username, appPassword);
 
-  // Download image
-  const imageRes = await fetch(imageUrl);
-  if (!imageRes.ok) {
-    throw new Error(`Failed to download generated image: ${imageRes.statusText}`);
+  let buffer: Buffer;
+  let contentType = 'image/png';
+  let extension = 'png';
+
+  if (imageUrl.startsWith('data:')) {
+    const matches = imageUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (matches && matches.length === 3) {
+      contentType = matches[1];
+      extension = contentType.includes('png') ? 'png' : 'jpg';
+      buffer = Buffer.from(matches[2], 'base64');
+    } else {
+      throw new Error('Invalid base64 data URI');
+    }
+  } else {
+    // Download image from URL
+    const imageRes = await fetch(imageUrl);
+    if (!imageRes.ok) {
+      throw new Error(`Failed to download generated image: ${imageRes.statusText}`);
+    }
+    contentType = imageRes.headers.get('content-type') || 'image/jpeg';
+    extension = contentType.includes('png') ? 'png' : 'jpg';
+    const arrayBuffer = await imageRes.arrayBuffer();
+    buffer = Buffer.from(arrayBuffer);
   }
 
-  const contentType = imageRes.headers.get('content-type') || 'image/jpeg';
-  const extension = contentType.includes('png') ? 'png' : 'jpg';
   const cleanFilename = filename.endsWith(`.${extension}`) ? filename : `${filename}.${extension}`;
-
-  const arrayBuffer = await imageRes.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
 
   const uploadEndpoint = `${baseUrl}/wp-json/wp/v2/media`;
   const uploadRes = await fetch(uploadEndpoint, {
@@ -96,8 +110,10 @@ export async function uploadImageToWordPress({
       'Content-Disposition': `attachment; filename="${cleanFilename}"`,
       'Content-Type': contentType,
     },
-    body: buffer,
+    body: new Uint8Array(buffer),
   });
+
+
 
 
   if (!uploadRes.ok) {
