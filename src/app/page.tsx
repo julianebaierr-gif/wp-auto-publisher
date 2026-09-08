@@ -20,7 +20,9 @@ import {
   FileText,
   ArrowRight,
   Edit3,
-  XCircle
+  XCircle,
+  Calendar,
+  Clock
 } from 'lucide-react';
 import { GenerationSettings } from '@/types';
 
@@ -35,6 +37,10 @@ export default function Home() {
   const [previewData, setPreviewData] = useState<any>(null);
   const [publishedResult, setPublishedResult] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Single article schedule state
+  const [singleScheduleType, setSingleScheduleType] = useState<'now' | '8hours' | 'custom'>('now');
+  const [customScheduleDate, setCustomScheduleDate] = useState<string>('');
 
   // Bulk generation state
   const [bulkKeywords, setBulkKeywords] = useState('');
@@ -161,12 +167,21 @@ export default function Home() {
     }
   };
 
-  // 2. Confirm and Publish to WordPress
+  // 2. Confirm and Publish / Schedule to WordPress
   const handleConfirmPublish = async () => {
     if (!previewData) return;
 
     setIsPublishing(true);
     setErrorMessage(null);
+
+    // Calculate schedule date
+    let scheduleDateStr: string | undefined = undefined;
+    if (singleScheduleType === '8hours') {
+      const futureTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
+      scheduleDateStr = futureTime.toISOString().replace(/\.\d{3}Z$/, '');
+    } else if (singleScheduleType === 'custom' && customScheduleDate) {
+      scheduleDateStr = new Date(customScheduleDate).toISOString().replace(/\.\d{3}Z$/, '');
+    }
 
     try {
       let res = await fetch('/api/publish-article', {
@@ -175,7 +190,11 @@ export default function Home() {
         body: JSON.stringify({
           article: previewData.article,
           images: previewData.images,
-          settings,
+          scheduleDate: scheduleDateStr,
+          settings: {
+            ...settings,
+            publishStatus: scheduleDateStr ? 'future' : settings.publishStatus,
+          },
         }),
       });
 
@@ -253,13 +272,17 @@ export default function Home() {
           title: previewData.article.title,
           slug: previewData.article.slug,
           content: postContentHtml,
-          status: settings.publishStatus || 'publish',
+          status: scheduleDateStr ? 'future' : (settings.publishStatus || 'publish'),
           meta: {
             _yoast_wpseo_focuskw: previewData.article.focusKeyword,
             _yoast_wpseo_metadesc: previewData.article.metaDescription,
             _yoast_wpseo_title: previewData.article.title,
           },
         };
+
+        if (scheduleDateStr) {
+          payload.date = scheduleDateStr;
+        }
 
         if (featuredId > 0) {
           payload.featured_media = featuredId;
@@ -757,24 +780,118 @@ export default function Home() {
                         Looks Good?
                       </h3>
                       <p className="text-xs text-slate-400">
-                        Article aur dono images check kar lein. Publish dabane par images WordPress Media Library me upload hongi aur post live ho jayega.
+                        Article aur dono images check kar lein. Direct WordPress par abhi live karein ya schedule karein.
                       </p>
+
+                      {/* Schedule Options Selector */}
+                      <div className="space-y-2 pt-2 border-t border-slate-800">
+                        <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                          发布时间选项 (Publish Schedule):
+                        </label>
+                        <div className="grid grid-cols-1 gap-2">
+                          <label
+                            className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer transition ${
+                              singleScheduleType === 'now'
+                                ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-300'
+                                : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="scheduleType"
+                              value="now"
+                              checked={singleScheduleType === 'now'}
+                              onChange={() => setSingleScheduleType('now')}
+                              className="text-emerald-500 focus:ring-emerald-500 h-3.5 w-3.5"
+                            />
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-slate-200">立即发布 (Publish Immediately)</span>
+                              <span className="text-[10px] text-slate-400">WordPress par foran live ho jayega</span>
+                            </div>
+                          </label>
+
+                          <label
+                            className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer transition ${
+                              singleScheduleType === '8hours'
+                                ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-300'
+                                : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="scheduleType"
+                              value="8hours"
+                              checked={singleScheduleType === '8hours'}
+                              onChange={() => setSingleScheduleType('8hours')}
+                              className="text-emerald-500 focus:ring-emerald-500 h-3.5 w-3.5"
+                            />
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-slate-200 flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-amber-400" /> 8小时后自动发布 (Auto in 8 Hours)
+                              </span>
+                              <span className="text-[10px] text-amber-300/80">WordPress schedule calendar mein lag jayega</span>
+                            </div>
+                          </label>
+
+                          <label
+                            className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer transition ${
+                              singleScheduleType === 'custom'
+                                ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-300'
+                                : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="scheduleType"
+                              value="custom"
+                              checked={singleScheduleType === 'custom'}
+                              onChange={() => setSingleScheduleType('custom')}
+                              className="text-emerald-500 focus:ring-emerald-500 h-3.5 w-3.5"
+                            />
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-slate-200">自定义排期时间 (Custom Schedule)</span>
+                              <span className="text-[10px] text-slate-400">Apni marzi ki date & time choose karein</span>
+                            </div>
+                          </label>
+                        </div>
+
+                        {singleScheduleType === 'custom' && (
+                          <div className="pt-1">
+                            <input
+                              type="datetime-local"
+                              value={customScheduleDate}
+                              onChange={(e) => setCustomScheduleDate(e.target.value)}
+                              className="w-full bg-slate-950 border border-slate-700 text-emerald-300 text-xs rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+                            />
+                          </div>
+                        )}
+                      </div>
 
                       <button
                         type="button"
                         onClick={handleConfirmPublish}
-                        disabled={isPublishing}
+                        disabled={isPublishing || (singleScheduleType === 'custom' && !customScheduleDate)}
                         className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-bold px-6 py-4 rounded-xl shadow-xl shadow-emerald-500/30 transition text-base cursor-pointer disabled:opacity-50"
                       >
                         {isPublishing ? (
                           <>
                             <Loader2 className="w-5 h-5 animate-spin" />
-                            Publishing to WordPress...
+                            {singleScheduleType === 'now' ? 'Publishing to WordPress...' : 'Scheduling to WordPress...'}
                           </>
                         ) : (
                           <>
-                            <Send className="w-5 h-5" />
-                            Publish Live to WordPress
+                            {singleScheduleType === 'now' ? (
+                              <>
+                                <Send className="w-5 h-5" />
+                                Publish Live to WordPress
+                              </>
+                            ) : (
+                              <>
+                                <Calendar className="w-5 h-5 text-slate-950" />
+                                Schedule Post to WordPress
+                              </>
+                            )}
                           </>
                         )}
                       </button>

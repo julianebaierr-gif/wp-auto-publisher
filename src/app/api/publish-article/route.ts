@@ -77,9 +77,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Publish to WordPress with Yoast SEO Meta & Auto Category
+    // 3. Publish to WordPress with Yoast SEO Meta & Auto Category & Optional Schedule Date
     console.log('Publishing post to WordPress with Auto-Category...');
     const categoryId = article.category?.id || (await import('@/lib/wordpress')).autoDetermineCategory(article.focusKeyword, article.title).id;
+    const scheduleDate = body.scheduleDate || undefined;
 
     const publishedPost = await publishPostToWordPress({
       title: article.title,
@@ -89,7 +90,8 @@ export async function POST(req: NextRequest) {
       focusKeyword: article.focusKeyword,
       featuredMediaId,
       categoryId,
-      status: publishStatus,
+      status: scheduleDate ? 'future' : publishStatus,
+      date: scheduleDate,
       wpUrl,
       username: wpUsername,
       appPassword: wpAppPassword,
