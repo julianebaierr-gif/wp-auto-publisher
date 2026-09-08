@@ -54,43 +54,38 @@ export async function generateSeoArticle({
 tgcenters.com publishes the most exhaustive, authoritative, long-form Chinese Telegram manuals available anywhere online.
 
 CRITICAL EDITORIAL & SEO REQUIREMENTS (GOOGLE 2026 HELPFUL CONTENT & EEAT COMPLIANT):
-1. MANDATORY ULTRA-LONG PILLAR GUIDE (10,000+ CHINESE CHARACTERS EXPLICIT REQUIREMENT):
-   - You MUST generate an ultra-long, deeply comprehensive master guide with over 10,000 Chinese characters (正文纯汉字总字数必须极其充实，务必达到10000字以上).
-   - Write 12 to 15 expansive major sections (H2) and 2 to 4 detailed sub-sections (H3) under each major section.
-   - EVERY H2 and H3 section MUST have 4 to 7 expansive, highly thorough narrative paragraphs (<p class="wp-block-paragraph">...</p>).
-   - DO NOT summarize or write brief outlines. Write exhaustive, step-by-step, real-world explanations covering:
-     * 架构原理与MTProto加密机制
-     * 各平台客户端安装与环境配置（iOS、Android独立APK、Windows、macOS、Linux、Web网页端）
-     * 手机号注册与收不到验证码全套解决方案（中国移动/联通/电信拦截机制、VoIP/Google Voice限制、接码平台与eSIM替代方案）
-     * 官方简体中文语言包安装与一键汉化深度步骤
-     * 账户最高等级安全加固（两步验证密码、隐藏手机号、防盗号、防劫持、防止被拉进垃圾群组）
-     * 群组管理、频道运营、超级群20万人管理与机器人Bot API配置
-     * 常见网络连接问题排查、内置代理MTProxy与SOCKS5详细设置
-     * 封号原因分析、申诉解封官方邮件模板与养号防封注意事项
-     * 常见操作疑难问答与FAQ汇总
+1. 100% UNIQUE, HIGH-VALUE CONTENT (GOOGLE 2026 CORE UPDATE ALIGNED):
+   - Every single article generated must be completely bespoke, highly original, and tailored strictly to "${keyword}".
+   - Zero boilerplate, zero generic filler. Focus on first-hand actionable experience, technical protocol mechanics (MTProto, SMS carrier routing, Android APK vs Google Play version differences, iOS TestFlight/App Store restrictions, desktop multi-account isolation, proxy configurations, end-to-end secret chat verification).
+   - Word count: Highly comprehensive master guide exceeding 10,000 Chinese characters across 10 to 14 in-depth major sections (H2) and descriptive sub-sections (H3, H4).
+   - ANTI-REPETITION MANDATE: Do NOT reuse generic templates or repeat the same cookie-cutter paragraphs across different keywords. The structure, troubleshooting scenarios, examples, device workflows, and explanations must be 100% customized and uniquely dedicated to "${keyword}".
 
-2. STRICTLY NO LINKS INSIDE HEADINGS (H1, H2, H3, H4):
+2. HIERARCHICAL HEADINGS STRUCTURE (H2 TO H4):
+   - Organize the article logically with 10 to 14 major H2 headings, detailed H3 sub-headings, and deep-dive H4 sub-sections where appropriate.
+   - EVERY section (H2, H3, H4) must have expansive, in-depth narrative paragraphs (<p class="wp-block-paragraph">...</p>) packed with fresh insights.
+
+3. STRICTLY NO LINKS INSIDE HEADINGS (H1, H2, H3, H4):
    - Internal and external links MUST ONLY be placed inside standard body paragraphs (<p class="wp-block-paragraph">...</p>).
    - NEVER place any <a> tags inside <h2>, <h3>, or <h4> headings under any circumstance.
 
-3. NO NUMERIC HEADINGS OR NUMBERED PREFIXES:
+4. NO NUMERIC HEADINGS OR NUMBERED PREFIXES:
    - NEVER write "一、", "二、", "三、", "1.", "2.", "1.1", "1.2", "1.1.1", or "步骤一".
    - Headings MUST be clean, natural, professional descriptive phrases or natural questions.
 
-4. MANDATORY 5 TO 10 SHORT FAQ ITEMS WITH GOOGLE FAQ SCHEMA:
+5. MANDATORY 5 TO 10 SHORT FAQ ITEMS WITH GOOGLE FAQ SCHEMA:
    - Provide 5 to 10 high-value, concise, practical questions and answers that real users ask Google search.
    - Answers must be concise, accurate, and direct (between 50 and 120 Chinese characters each).
 
-5. MANDATORY INTERNAL LINKS (EMBED 4 TO 5 IN BODY PARAGRAPHS ONLY):
+6. MANDATORY INTERNAL LINKS (EMBED 4 TO 5 IN BODY PARAGRAPHS ONLY):
    - Embed 4 to 5 clickable HTML links <a href="..." title="...">...</a> inside body paragraphs (<p>) using candidate URLs from tgcenters.com.
    - Never place inside headings!
 
-6. MANDATORY EXTERNAL LINKS (EMBED AT LEAST 2 OFFICIAL SITES IN PARAGRAPHS ONLY):
+7. MANDATORY EXTERNAL LINKS (EMBED AT LEAST 2 OFFICIAL SITES IN PARAGRAPHS ONLY):
    - Embed at least 2 official links:
      * <a href="https://telegram.org" target="_blank" rel="noopener noreferrer">Telegram官方网站</a>
      * <a href="https://telegram.org/faq" target="_blank" rel="noopener noreferrer">Telegram官方常见问题 (FAQ)</a>
 
-7. YOAST SEO EXACT KEYWORD FORMATTING (CRITICAL - STRICTLY NO BRACKETS 【 】, USE CLEAN SPACES):
+8. YOAST SEO EXACT KEYWORD FORMATTING (CRITICAL - STRICTLY NO BRACKETS 【 】, USE CLEAN SPACES):
    - The focus keyword is: "${keyword}".
    - NEVER wrap the keyword in Chinese brackets like 【${keyword}】 or [${keyword}].
    - Instead, ALWAYS place clean spaces before and after the keyword: " ${keyword} " so that Yoast SEO word boundaries and Chinese tokenizers detect the standalone focus keyword with 100% green light!
@@ -98,13 +93,13 @@ CRITICAL EDITORIAL & SEO REQUIREMENTS (GOOGLE 2026 HELPFUL CONTENT & EEAT COMPLI
    - In Meta Description: Start with clean spaced keyword: "针对 ${keyword} ，本文提供全面实用的中文指南...".
    - In the First Paragraph (<p>...</p>): The very first sentence must contain " ${keyword} " within the first 60 characters with clean spaces and no brackets.
 
-8. MID-ARTICLE IMAGE PLACEHOLDER:
+9. MID-ARTICLE IMAGE PLACEHOLDER:
    - Place \`<!-- IN_ARTICLE_IMAGE_HERE -->\` exactly in the middle of the article content.
 
-9. ENGLISH SLUG:
+10. ENGLISH SLUG:
    - Clean, lowercase, hyphenated English (e.g., "telegram-usage-complete-guide"). Strictly NO Chinese in slug.
 
-10. OPENAI IMAGE PROMPTS:
+11. OPENAI IMAGE PROMPTS:
    - Generate 2 English prompts for OpenAI Image API specifically tailored to "${keyword}" with 3D tech aesthetic, clean smartphone mockup, no text, no watermark.
 
 FORMAT: Return valid raw JSON only.`;
