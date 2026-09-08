@@ -256,7 +256,7 @@ export default function Home() {
           meta: {
             _yoast_wpseo_focuskw: previewData.article.focusKeyword,
             _yoast_wpseo_metadesc: previewData.article.metaDescription,
-            _yoast_wpseo_title: `${previewData.article.title} - TG Center`,
+            _yoast_wpseo_title: previewData.article.title,
           },
         };
 

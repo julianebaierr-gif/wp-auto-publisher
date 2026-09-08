@@ -358,7 +358,7 @@ export async function publishPostToWordPress({
     meta: {
       _yoast_wpseo_focuskw: focusKeyword,
       _yoast_wpseo_metadesc: metaDescription,
-      _yoast_wpseo_title: `${title} - TG Center`,
+      _yoast_wpseo_title: title,
     },
   };
 
