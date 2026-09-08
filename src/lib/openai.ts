@@ -38,8 +38,9 @@ CRITICAL WRITING REQUIREMENTS:
    - You MUST first design a comprehensive, structured hierarchical outline (H2 to H4).
    - For every section in the outline, specify its heading, level ('h2'|'h3'|'h4'), estimated character count (预算中文字数 e.g. 350-500字), and a brief description.
 3. IN-DEPTH, PARAGRAPH-RICH CONTENT (STRICT 3000 - 4000 CHINESE CHARACTERS):
-   - Total body content MUST be between 3000 and 4000 Chinese characters (字数严格在3000至4000字之间).
-   - DO NOT just write brief bullet points or quick summaries! Write detailed, narrative, explanatory paragraphs with deep practical instructions, real-world troubleshooting scenarios, operational logic, and security analysis.
+   - Total body content MUST be between 3000 and 4000 Chinese characters (字数严格在3000至4000中文字之间，不能低于3000字).
+   - DO NOT just write brief bullet points or quick 1-sentence summaries! Each section and subsection must consist of multiple rich, comprehensive paragraphs (每小节至少写2-3个详细段落) covering step-by-step guidance, common pitfalls, troubleshooting steps, pro tips, and security recommendations.
+   - Expand extensively on real-world details so the total Chinese text exceeds 3000 characters.
 4. RICH SEMANTIC & LSI KEYWORDS:
    - Heavily incorporate relevant semantic keywords and LSI terms throughout the outline and content (e.g., Telegram中文版, 电报下载, 纸飞机, 验证码接收, 双重认证, 隐藏手机号, 官方正版, 苹果ID切换, 安卓APK安装, 桌面端同步, 频道订阅, 群组管理).
    - Also actively incorporate the keywords of already published articles on the site so that internal linking happens completely naturally and contextually.
