@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { WPPostSummary } from '@/types';
+import { WPPostSummary, WPCategory } from '@/types';
 import { getPreviewImage } from '@/lib/imageStore';
 
 export function getWpAuthHeaders(username?: string, appPassword?: string) {
@@ -112,6 +112,62 @@ export async function fetchExistingPosts(wpUrl?: string): Promise<WPPostSummary[
 
   console.log(`Loaded ${results.length} URLs from XML sitemaps for internal linking.`);
   return results;
+}
+
+/**
+ * Fetch existing categories from WordPress
+ */
+export async function fetchWordPressCategories(wpUrl?: string, username?: string, appPassword?: string): Promise<WPCategory[]> {
+  try {
+    const baseUrl = getWpBaseUrl(wpUrl);
+    const authHeaders = getWpAuthHeaders(username, appPassword);
+    const res = await fetch(`${baseUrl}/wp-json/wp/v2/categories?per_page=100`, {
+      headers: authHeaders,
+      cache: 'no-store',
+    });
+    if (res.ok) {
+      const cats = await res.json();
+      if (Array.isArray(cats)) {
+        return cats.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+          count: c.count,
+        }));
+      }
+    }
+  } catch (err) {
+    console.warn('Could not fetch WordPress categories:', err);
+  }
+  // Default fallback if offline or request fails
+  return [
+    { id: 27, name: 'Telegram教程', slug: 'telegram-tutorials' },
+    { id: 1, name: 'Telegram下载', slug: 'telegram-downloads' },
+  ];
+}
+
+/**
+ * Auto-determine the most relevant category based on keyword and title
+ */
+export function autoDetermineCategory(keyword: string, title?: string, categories?: WPCategory[]): WPCategory {
+  const cats = categories && categories.length > 0 ? categories : [
+    { id: 27, name: 'Telegram教程', slug: 'telegram-tutorials' },
+    { id: 1, name: 'Telegram下载', slug: 'telegram-downloads' },
+  ];
+
+  const lowerText = `${keyword} ${title || ''}`.toLowerCase();
+
+  // If download related (下载, download, apk, mac, win, app)
+  if (/下载|download|apk|安装|电脑版|安卓版|苹果版|mac|windows|ios/i.test(lowerText) && !/怎么用|教程|使用|指南|设置|验证码/i.test(lowerText)) {
+    const downloadCat = cats.find(c => c.name.includes('下载') || c.slug.includes('download'));
+    if (downloadCat) return downloadCat;
+  }
+
+  // Otherwise, default to Tutorial / 教程 (Telegram教程 is category id 27 on tgcenters.com)
+  const tutorialCat = cats.find(c => c.name.includes('教程') || c.slug.includes('tutorial'));
+  if (tutorialCat) return tutorialCat;
+
+  return cats[0];
 }
 
 
@@ -261,6 +317,7 @@ export async function publishPostToWordPress({
   metaDescription,
   focusKeyword,
   featuredMediaId,
+  categoryId,
   status = 'publish',
   wpUrl,
   username,
@@ -272,6 +329,7 @@ export async function publishPostToWordPress({
   metaDescription: string;
   focusKeyword: string;
   featuredMediaId?: number;
+  categoryId?: number;
   status?: 'publish' | 'draft';
   wpUrl?: string;
   username?: string;
@@ -295,6 +353,10 @@ export async function publishPostToWordPress({
 
   if (featuredMediaId) {
     payload.featured_media = featuredMediaId;
+  }
+
+  if (categoryId) {
+    payload.categories = [categoryId];
   }
 
   const res = await fetch(`${baseUrl}/wp-json/wp/v2/posts`, {

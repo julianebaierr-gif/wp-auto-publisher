@@ -64,8 +64,10 @@ export async function POST(req: NextRequest) {
       finalContentHtml = finalContentHtml.split(images.inArticle.url).join(inArticleMedia.sourceUrl);
     }
 
-    // 3. Publish to WordPress with Yoast SEO Meta
-    console.log('Publishing post to WordPress...');
+    // 3. Publish to WordPress with Yoast SEO Meta & Auto Category
+    console.log('Publishing post to WordPress with Auto-Category...');
+    const categoryId = article.category?.id || (await import('@/lib/wordpress')).autoDetermineCategory(article.focusKeyword, article.title).id;
+
     const publishedPost = await publishPostToWordPress({
       title: article.title,
       slug: article.slug,
@@ -73,6 +75,7 @@ export async function POST(req: NextRequest) {
       metaDescription: article.metaDescription,
       focusKeyword: article.focusKeyword,
       featuredMediaId,
+      categoryId,
       status: publishStatus,
       wpUrl,
       username: wpUsername,

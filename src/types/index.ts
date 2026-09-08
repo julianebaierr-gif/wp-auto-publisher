@@ -5,6 +5,13 @@ export interface WPPostSummary {
   slug: string;
 }
 
+export interface WPCategory {
+  id: number;
+  name: string;
+  slug: string;
+  count?: number;
+}
+
 export interface GenerationSettings {
   openaiApiKey?: string;
   wpUrl?: string;
@@ -27,6 +34,10 @@ export interface GeneratedArticle {
   contentHtml: string;
   featuredImagePrompt: string;
   inArticleImagePrompt: string;
+  category?: {
+    id: number;
+    name: string;
+  };
   internalLinksUsed: { title: string; url: string }[];
   externalLinksUsed: { title: string; url: string }[];
   yoastScoreEstimate: {

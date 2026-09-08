@@ -25,13 +25,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`[Preview Step 1/3] Fetching existing WordPress posts for keyword "${trimmedKeyword}"...`);
-    const existingPosts = await fetchExistingPosts(wpUrl);
+    console.log(`[Preview Step 1/3] Fetching existing WordPress posts & categories for keyword "${trimmedKeyword}"...`);
+    const [existingPosts, categories] = await Promise.all([
+      fetchExistingPosts(wpUrl),
+      (await import('@/lib/wordpress')).fetchWordPressCategories(wpUrl, settings.wpUsername, settings.wpAppPassword),
+    ]);
 
     console.log(`[Preview Step 2/3] Generating SEO article with Yoast standards...`);
     const article = await generateSeoArticle({
       keyword: trimmedKeyword,
       existingPosts,
+      categories,
       apiKey: openaiApiKey,
     });
 

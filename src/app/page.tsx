@@ -457,11 +457,18 @@ export default function Home() {
                 <div className="lg:col-span-8 space-y-6">
                   {/* Article Title & Meta */}
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs uppercase tracking-wider font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded border border-emerald-500/20">
-                        Focus Keyword: {previewData.article.focusKeyword}
-                      </span>
-                      <span className="text-xs text-slate-400">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs uppercase tracking-wider font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded border border-emerald-500/20">
+                          Focus Keyword: {previewData.article.focusKeyword}
+                        </span>
+                        {previewData.article.category && (
+                          <span className="text-xs font-semibold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded border border-blue-500/20">
+                            📁 分类: {previewData.article.category.name}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-slate-400 font-mono">
                         Slug: /{previewData.article.slug}
                       </span>
                     </div>

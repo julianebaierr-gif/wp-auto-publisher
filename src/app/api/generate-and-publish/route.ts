@@ -35,14 +35,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`[Step 1/5] Fetching existing WordPress posts for keyword "${trimmedKeyword}"...`);
-    const existingPosts = await fetchExistingPosts(wpUrl);
-    console.log(`Fetched ${existingPosts.length} existing posts for internal linking.`);
+    console.log(`[Step 1/5] Fetching existing WordPress posts and categories for keyword "${trimmedKeyword}"...`);
+    const [existingPosts, categories] = await Promise.all([
+      fetchExistingPosts(wpUrl),
+      (await import('@/lib/wordpress')).fetchWordPressCategories(wpUrl, wpUsername, wpAppPassword),
+    ]);
+    console.log(`Fetched ${existingPosts.length} existing posts and ${categories.length} categories.`);
 
     console.log(`[Step 2/5] Generating SEO-optimized article with Yoast standards...`);
     const article = await generateSeoArticle({
       keyword: trimmedKeyword,
       existingPosts,
+      categories,
       apiKey: openaiApiKey,
     });
 
@@ -115,7 +119,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    console.log(`[Step 5/5] Publishing post to WordPress with Yoast SEO metadata...`);
+    console.log(`[Step 5/5] Publishing post to WordPress with Yoast SEO metadata & Auto Category...`);
+    const categoryId = article.category?.id || (await import('@/lib/wordpress')).autoDetermineCategory(trimmedKeyword, article.title).id;
+
     const publishedPost = await publishPostToWordPress({
       title: article.title,
       slug: article.slug,
@@ -123,6 +129,7 @@ export async function POST(req: NextRequest) {
       metaDescription: article.metaDescription,
       focusKeyword: article.focusKeyword,
       featuredMediaId: featuredMedia.id,
+      categoryId,
       status: publishStatus,
       wpUrl,
       username: wpUsername,
