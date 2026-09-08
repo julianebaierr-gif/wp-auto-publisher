@@ -83,24 +83,30 @@ CRITICAL EDITORIAL & SEO REQUIREMENTS:
 6. MID-ARTICLE IMAGE PLACEHOLDER:
    - Place the exact comment \`<!-- IN_ARTICLE_IMAGE_HERE -->\` exactly in the middle of the article content (between the 5th and 6th major H2 sections).
 
-7. ENGLISH SLUG:
+7. YOAST SEO EXACT KEYWORD ISOLATION (CRITICAL REQUIREMENT):
+   - The focus keyword is: "${keyword}".
+   - In the "title": The main keyword "${keyword}" MUST stand out prominently as a distinct, standalone phrase separated cleanly with a colon, hyphen, or clean spacing (e.g. "${keyword}：全面使用指南与技巧", or "${keyword} - 2026官方最新教程"). Do NOT blend, fuse, or merge the keyword characters into other words.
+   - In the "metaDescription": The main keyword "${keyword}" MUST appear verbatim as a standalone phrase right at the beginning or front of the sentence (e.g. "针对${keyword}，本文提供..."). It must be clean, distinct, and between 130 and 155 Chinese characters.
+   - In the FIRST PARAGRAPH (<p>...</p>) of "contentHtml": The main keyword "${keyword}" MUST appear within the very first 60 characters as an exact, standalone phrase (例如："很多用户在搜索【${keyword}】时，最关心的就是..." 或 "关于${keyword}，首先需要了解的是...") so that Yoast SEO immediately gives a 100% green light for "Keyphrase in introduction".
+
+8. ENGLISH SLUG:
    - Clean, lowercase, hyphenated English (e.g., "telegram-usage-guide"). Strictly NO Chinese in slug.
 
-8. OPENAI IMAGE PROMPTS:
+9. OPENAI IMAGE PROMPTS:
    - Generate 2 English prompts for OpenAI Image API specifically matching "${keyword}" with modern Telegram 3D tech aesthetic, clean mobile UI mockup, no text, no watermark.
 
 FORMAT: Return valid raw JSON only conforming strictly to schema. No markdown codeblocks (\`\`\`json).`;
 
-  const userPrompt = `Target Focus Keyword: "${keyword}"
+  const userPrompt = `Target Focus Keyword: "${keyword}" (Must appear as a distinct standalone phrase without blending in Title, Meta Description, and First Paragraph!)
 
 Available tgcenters.com Sitemap Pages for Context & Internal Linking:
 ${JSON.stringify(linkCandidates, null, 2)}
 
 Generate the complete 10,000+ Chinese character master guide in JSON format:
 {
-  "title": "Telegram SEO中文标题（包含关键词，自然通顺）",
+  "title": "${keyword}：详细使用指南与实用技巧",
   "slug": "english-keyword-slug-only",
-  "metaDescription": "中文元描述（包含关键词，130-155字）",
+  "metaDescription": "本文针对${keyword}提供全面实用的中文指南，从正版下载、注册登录、验证码接收到中文包设置与隐私防护，助您轻松掌握Telegram核心功能。",
   "focusKeyword": "${keyword}",
   "semanticKeywordsUsed": ["Telegram中文版", "电报注册", "验证码", "隐私保护", "双重认证", "频道订阅"],
   "outline": [
@@ -308,13 +314,44 @@ Generate the complete 10,000+ Chinese character master guide in JSON format:
     safeSlug = 'telegram-guide';
   }
 
+  // Ensure main keyword is distinctly separated in Title (not merged)
+  let safeTitle = (parsed.title || '').trim();
+  if (!safeTitle.includes(keyword)) {
+    safeTitle = `${keyword}：${safeTitle}`;
+  } else if (!safeTitle.startsWith(keyword) && !safeTitle.includes(`：`) && !safeTitle.includes(`-`)) {
+    // If keyword is merged inside without clean separator, isolate it cleanly
+    safeTitle = `${keyword}：${safeTitle.replace(keyword, '').trim()}`;
+  }
+
+  // Ensure main keyword is prominently standalone at beginning of Meta Description
+  let safeMetaDesc = (parsed.metaDescription || '').trim();
+  if (!safeMetaDesc.includes(keyword)) {
+    safeMetaDesc = `本文针对${keyword}提供全面实用的中文指南。${safeMetaDesc}`;
+  }
+
+  // Ensure first paragraph contains the standalone main keyword cleanly in the first 60 characters
+  const firstPOpen = finalContentHtml.indexOf('<p');
+  if (firstPOpen !== -1) {
+    const firstPClose = finalContentHtml.indexOf('</p>', firstPOpen);
+    if (firstPClose !== -1) {
+      const firstPContent = finalContentHtml.slice(firstPOpen, firstPClose + 4);
+      if (!firstPContent.slice(0, 100).includes(keyword)) {
+        // Prepend clean introductory clause with exact standalone keyword
+        const cleanInsert = `对于关注【${keyword}】的用户而言，掌握官方正版的操作与设置至关重要。`;
+        finalContentHtml = finalContentHtml.slice(0, firstPOpen) +
+          firstPContent.replace(/(<p[^>]*>)/i, `$1${cleanInsert}`) +
+          finalContentHtml.slice(firstPClose + 4);
+      }
+    }
+  }
+
   // Auto-determine best category
-  const selectedCategory = autoDetermineCategory(keyword, parsed.title, categories);
+  const selectedCategory = autoDetermineCategory(keyword, safeTitle, categories);
 
   return {
-    title: parsed.title,
+    title: safeTitle,
     slug: safeSlug,
-    metaDescription: parsed.metaDescription,
+    metaDescription: safeMetaDesc,
     focusKeyword: keyword,
     contentHtml: finalContentHtml,
     category: {
