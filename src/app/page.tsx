@@ -593,11 +593,12 @@ export default function Home() {
                         </div>
 
                         <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
-                          <span className="text-slate-300">Article Word Count</span>
+                          <span className="text-slate-300">Chinese Content Length</span>
                           <span className="text-emerald-400 font-bold">
-                            {previewData.article.yoastScoreEstimate?.wordCount || 1250}+ words
+                            {previewData.article.yoastScoreEstimate?.wordCount || 1200} Characters (1000-1500 字)
                           </span>
                         </div>
+
 
                         <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
                           <span className="text-slate-300">DALL-E 3 Images with Alt Tags</span>
