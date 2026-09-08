@@ -486,17 +486,20 @@ Return valid JSON:
     })),
   };
 
-  // Append visible FAQ section in content if not present
-  if (!finalContentHtml.includes('常见问题解答') && !finalContentHtml.includes('FAQ')) {
-    let faqSectionHtml = `<h2>常见问题解答（FAQ）</h2>\n<div class="faq-container space-y-4 my-6">\n`;
-    for (const faq of faqItems) {
-      faqSectionHtml += `  <div class="faq-item mb-4 p-4 rounded-xl bg-slate-900 border border-slate-800">\n    <h3 class="font-bold text-slate-100 mb-2">${faq.question}</h3>\n    <p class="text-slate-300 text-sm">${faq.answer}</p>\n  </div>\n`;
-    }
-    faqSectionHtml += `</div>\n`;
-    finalContentHtml += faqSectionHtml;
-  }
+  // GUARANTEE VISIBLE FAQ SECTION IN CONTENT HTML
+  // First clean out any existing partial FAQ tags to avoid duplicates
+  finalContentHtml = finalContentHtml.replace(/<h2[^>]*>(常见问题解答|FAQ|常见问题)[\s\S]*?(<\/div>|$)/gi, '');
 
-  // Inject Google FAQ Schema script tag directly into HTML
+  let faqSectionHtml = `\n<h2>常见问题解答（FAQ）</h2>\n<div class="faq-container space-y-4 my-6">\n`;
+  for (const faq of faqItems) {
+    faqSectionHtml += `  <div class="faq-item mb-4 p-4 rounded-xl bg-slate-900 border border-slate-800">\n    <h3 class="font-bold text-slate-100 mb-2">${faq.question}</h3>\n    <p class="text-slate-300 text-sm leading-relaxed">${faq.answer}</p>\n  </div>\n`;
+  }
+  faqSectionHtml += `</div>\n`;
+
+  // Always append visible FAQ section
+  finalContentHtml += faqSectionHtml;
+
+  // Inject Google FAQ Schema script tag directly into HTML for Google Rich Snippets
   const schemaScript = `\n<script type="application/ld+json">\n${JSON.stringify(faqJsonLd, null, 2)}\n</script>\n`;
   finalContentHtml += schemaScript;
 
