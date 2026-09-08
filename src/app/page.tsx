@@ -58,17 +58,26 @@ export default function Home() {
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<any>(null);
 
-  // Load settings from localStorage
+  // Load settings from localStorage but keep valid defaults
   useEffect(() => {
     const saved = localStorage.getItem('wp_auto_publisher_settings');
     if (saved) {
       try {
-        setSettings(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        setSettings((prev) => ({
+          ...prev,
+          ...parsed,
+          // If saved has old password or empty, use working default
+          wpUrl: parsed.wpUrl && !parsed.wpUrl.includes('tradingblogco') ? parsed.wpUrl : 'https://tgcenters.com',
+          wpUsername: parsed.wpUsername || 'n8n-bot',
+          wpAppPassword: parsed.wpAppPassword || 'RPbI TjbC Hb08 wC5E Ok0U Dtpo',
+        }));
       } catch (e) {
         console.error(e);
       }
     }
   }, []);
+
 
   const saveSettings = (newSettings: GenerationSettings) => {
     setSettings(newSettings);
