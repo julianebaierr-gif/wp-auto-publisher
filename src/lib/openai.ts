@@ -29,56 +29,55 @@ export async function generateSeoArticle({
     url: p.link,
   }));
 
-  const systemPrompt = `You are an elite financial trading author, senior SEO strategist, and Yoast SEO 100% score optimization master for tgcenters.com.
+  const systemPrompt = `You are the chief tech editor, Telegram specialist, and Yoast SEO 100% score optimization expert for tgcenters.com (TG Center - Telegram中文版官网与使用指南中心).
+tgcenters.com specializes in comprehensive Telegram guides, including Telegram app downloads (iOS, Android, Windows, Mac), registration tutorials, SMS verification code troubleshooting, Chinese language pack installation (中文语言包), privacy & security settings, groups, channels, and bot usage.
 
 CRITICAL CONTENT & LENGTH REQUIREMENTS:
-1. LANGUAGE: Entire article (Title, Meta Description, Headings, Detailed Content, Bullet Points, Comparison Tables, Case Studies, FAQs) MUST be written in Simplified Chinese (简体中文).
+1. LANGUAGE: Entire article (Title, Meta Description, Headings, Detailed Content, Steps, FAQs) MUST be written in Simplified Chinese (简体中文).
 2. ARTICLE LENGTH (STRICT 3000 - 4000 CHINESE CHARACTERS):
-   - You MUST write a comprehensive, exhaustive, deep-dive article containing AT LEAST 3000 TO 4000 CHINESE CHARACTERS (中文正文字数必须严格在3000到4000字之间，内容必须极其充实，包含概念背景、技术指标构造、核心实战买卖法则、多周期图表分析、真实案例演示、止损止盈风控策略、高频交易陷阱以及详尽的FAQ常见问题解答).
-3. ENGLISH SLUG: The "slug" field MUST be in clean, lowercase, hyphenated English matching the keyword (e.g. "macd-trading-strategy-complete-guide"). Strictly NO Chinese characters in the slug.
+   - You MUST write a comprehensive, exhaustive, practical tutorial containing AT LEAST 3000 TO 4000 CHINESE CHARACTERS (中文正文字数严格在3000到4000中文字之间).
+   - Detail every single step: Prerequisites, step-by-step operating instructions (iOS/Android/Desktop), official download sources, common error troubleshooting (e.g. Too Many Requests, SMS delayed), security tips, and a detailed 5-question FAQ section.
+3. ENGLISH SLUG: The "slug" field MUST be in clean, lowercase, hyphenated English specifically matching the keyword (e.g. "telegram-download-guide", "telegram-chinese-setup-tutorial", "telegram-verification-code-solutions"). Strictly NO Chinese characters in the slug.
 
 CRITICAL INTERNAL & EXTERNAL LINKING:
 1. INTERNAL LINKS (4 to 5 MANDATORY):
-   - You MUST select and embed EXACTLY 4 to 5 internal links from the provided list of website sitemap URLs into the content.
-   - Embed them naturally in context with descriptive Chinese anchor text.
-   - Format: <a href="URL" title="Descriptive Title">相关中文锚文本</a>.
-2. EXTERNAL AUTHORITY LINKS (AT LEAST 2 MANDATORY):
-   - You MUST include AT LEAST 2 authoritative external reference links to reputable financial/trading/official websites (such as TradingView, Investopedia, Wikipedia, or SEC/official docs) relevant to the topic.
-   - Format: <a href="https://..." target="_blank" rel="noopener noreferrer">权威参考名称</a>.
+   - You MUST select and embed EXACTLY 4 to 5 internal links from the provided list of tgcenters.com sitemap URLs.
+   - Embed them naturally in the Chinese sentences with descriptive anchor text (e.g., <a href="https://tgcenters.com/telegram-download/" title="Telegram下载">Telegram官方客户端下载</a> or <a href="https://tgcenters.com/telegram-chinese-language/" title="Telegram中文语言包">Telegram中文汉化包</a>).
+2. EXTERNAL OFFICIAL LINKS (AT LEAST 2 MANDATORY):
+   - Include AT LEAST 2 authoritative official links (such as Telegram official site: https://telegram.org, Google Play Store, Apple App Store, or Wikipedia).
+   - Format: <a href="https://telegram.org" target="_blank" rel="noopener noreferrer">Telegram官方网站</a>.
 
-CRITICAL IMAGE RELEVANCE (OPENAI DALL-E / GPT-IMAGE):
-- The images MUST be 100% directly related to the specific keyword topic "${keyword}".
-- If the keyword is about MACD, the image must strictly show MACD histogram and crossover lines.
-- If the keyword is about candlestick patterns, show that exact candlestick formation.
-- Do NOT generate generic or unrelated financial scenes.
-- featuredImagePrompt: A photorealistic, high-end 3D financial trading chart visualization specifically showing "${keyword}", cinematic lighting, 4k resolution, absolutely NO text or letters on the image.
-- inArticleImagePrompt: A clean technical analysis chart breakdown specifically demonstrating "${keyword}" entry and exit signals, clear visual candlestick diagram, no text.
+CRITICAL IMAGE GENERATION INSTRUCTIONS (FOR OPENAI IMAGE API):
+- The images MUST be 100% strictly relevant to the exact keyword "${keyword}".
+- Focus visually on modern tech/mobile messaging: Telegram blue theme, sleek smartphone interface, paper plane icon, chat bubbles, security shield, or verification screen.
+- featuredImagePrompt: A sleek, high-end 3D modern tech graphic representing "${keyword}", featuring Telegram blue gradients, smartphone UI screen, clean minimal digital art, 4k, absolutely NO text or letters.
+- inArticleImagePrompt: A clean, step-by-step tech infographic/diagram illustration specifically depicting the process of "${keyword}", modern UI mockup, no text.
 
 FORMAT: Return pure JSON conforming strictly to the requested schema. No markdown codeblocks (\`\`\`json). Return valid raw JSON only.`;
 
   const userPrompt = `Target Focus Keyword: "${keyword}"
 
-Available Existing Website Sitemap URLs for Internal Linking (Choose 4 to 5):
+Available Existing tgcenters.com Sitemap URLs for Internal Linking (Choose 4 to 5):
 ${JSON.stringify(linkCandidates, null, 2)}
 
-Generate the complete 3000-4000 character in-depth Chinese article in valid JSON format:
+Generate the complete 3000-4000 character in-depth Chinese Telegram guide in valid JSON format:
 {
-  "title": "中文SEO标题（包含关键词，吸引点击）",
+  "title": "Telegram相关SEO标题（包含关键词，如：Telegram下载安装与注册教程）",
   "slug": "english-keyword-slug-only",
   "metaDescription": "中文元描述（包含关键词，130-150字）",
   "focusKeyword": "${keyword}",
   "contentHtml": "<h2>...</h2><p>...</p><!-- IN_ARTICLE_IMAGE_HERE --><p>...</p>...",
-  "featuredImagePrompt": "Strictly keyword-specific English prompt for OpenAI image: high-end photorealistic 3D chart visualization specifically focusing on ${keyword}, modern financial theme, 4k, no text, no watermark",
-  "inArticleImagePrompt": "Strictly keyword-specific English prompt for OpenAI image: technical chart diagram explicitly illustrating ${keyword} setup and candlestick patterns, clean analytical style, no text, no watermark",
+  "featuredImagePrompt": "High quality English prompt for OpenAI image: modern 3D tech concept representing ${keyword} with Telegram blue theme, sleek smartphone UI, clean aesthetic, no text, no watermark",
+  "inArticleImagePrompt": "High quality English prompt for OpenAI image: technical workflow illustration of ${keyword}, modern digital app mockup, clean style, no text, no watermark",
   "internalLinksUsed": [
-    { "title": "Sitemap Page Title", "url": "https://tgcenters.com/..." },
+    { "title": "Sitemap Page Title 1", "url": "https://tgcenters.com/..." },
     { "title": "Sitemap Page Title 2", "url": "https://tgcenters.com/..." },
     { "title": "Sitemap Page Title 3", "url": "https://tgcenters.com/..." },
     { "title": "Sitemap Page Title 4", "url": "https://tgcenters.com/..." }
   ],
   "externalLinksUsed": [
-    { "title": "Investopedia Reference", "url": "https://www.investopedia.com/..." },
-    { "title": "TradingView Reference", "url": "https://www.tradingview.com/..." }
+    { "title": "Telegram官网", "url": "https://telegram.org" },
+    { "title": "Wikipedia Telegram", "url": "https://en.wikipedia.org/wiki/Telegram_(software)" }
   ]
 }`;
 
@@ -120,7 +119,7 @@ Generate the complete 3000-4000 character in-depth Chinese article in valid JSON
     .replace(/(^-|-$)+/g, '');
 
   if (!safeSlug || safeSlug.length < 3) {
-    safeSlug = 'crypto-trading-guide';
+    safeSlug = 'telegram-guide';
   }
 
   return {
@@ -135,15 +134,15 @@ Generate the complete 3000-4000 character in-depth Chinese article in valid JSON
     externalLinksUsed: parsed.externalLinksUsed || [],
     yoastScoreEstimate,
   };
-
 }
 
 /**
- * Generate image ONLY via OpenAI API (gpt-image-1 / dall-e-3 / dall-e-2)
+ * Generate image ONLY via OpenAI API with lowest cost (gpt-image-1-mini / gpt-image-1 / dall-e-3)
+ * Cost is minimal (~$0.01 - $0.03 per image)
  */
 export async function generateDalleImage({
   prompt,
-  aspect = '1792x1024',
+  aspect = '1024x1024',
   apiKey,
 }: {
   prompt: string;
@@ -152,12 +151,12 @@ export async function generateDalleImage({
 }): Promise<string> {
   const openai = getOpenAIClient(apiKey);
 
-  // 1. Try gpt-image-1 first (verified supported on this project key)
+  // 1. Try gpt-image-1-mini (Lowest cost, super fast, strictly OpenAI)
   try {
-    console.log('Generating image using OpenAI gpt-image-1...');
+    console.log('Generating image using OpenAI gpt-image-1-mini (lowest cost tier)...');
     const response = await openai.images.generate({
-      model: 'gpt-image-1',
-      prompt: `${prompt}. High resolution digital art, clean financial charts, absolutely no text, no watermark.`,
+      model: 'gpt-image-1-mini',
+      prompt: `${prompt}. High resolution 3D digital art, Telegram blue aesthetic, clean modern tech UI, strictly no words, no letters, no watermark.`,
       n: 1,
       size: '1024x1024',
     });
@@ -169,44 +168,49 @@ export async function generateDalleImage({
     const url = response.data?.[0]?.url;
     if (url) return url;
   } catch (err: any) {
-    console.warn(`gpt-image-1 failed (${err.message}), trying dall-e-3...`);
+    console.warn(`gpt-image-1-mini notice (${err.message}), trying gpt-image-1...`);
   }
 
-  // 2. Try dall-e-3
+  // 2. Try gpt-image-1
+  try {
+    console.log('Generating image using OpenAI gpt-image-1...');
+    const response = await openai.images.generate({
+      model: 'gpt-image-1',
+      prompt: `${prompt}. High resolution digital art, clean Telegram mobile UI, absolutely no text, no watermark.`,
+      n: 1,
+      size: '1024x1024',
+    });
+
+    const b64 = response.data?.[0]?.b64_json;
+    if (b64) {
+      return `data:image/png;base64,${b64}`;
+    }
+    const url = response.data?.[0]?.url;
+    if (url) return url;
+  } catch (err: any) {
+    console.warn(`gpt-image-1 notice (${err.message}), trying dall-e-3...`);
+  }
+
+  // 3. Try dall-e-3 as fallback
   try {
     console.log('Generating image using OpenAI dall-e-3...');
     const response = await openai.images.generate({
       model: 'dall-e-3',
-      prompt: `${prompt}. Ultra-high resolution, clean aesthetic, financial trading theme, cinematic lighting, professional digital art, strictly no words, no letters, no text, no watermark.`,
+      prompt: `${prompt}. Ultra-high resolution, Telegram tech theme, strictly no text, no watermark.`,
       n: 1,
-      size: aspect,
+      size: '1024x1024',
       quality: 'standard',
     });
 
     const imageUrl = response.data?.[0]?.url;
     if (imageUrl) return imageUrl;
   } catch (err: any) {
-    console.warn(`dall-e-3 failed (${err.message}), trying dall-e-2...`);
-  }
-
-  // 3. Fallback to dall-e-2
-  try {
-    console.log('Generating image using OpenAI dall-e-2...');
-    const response = await openai.images.generate({
-      model: 'dall-e-2',
-      prompt: `${prompt.slice(0, 900)}. Ultra clean financial trading concept, professional digital art, strictly no words, no text.`,
-      n: 1,
-      size: '1024x1024',
-    });
-
-    const fallbackUrl = response.data?.[0]?.url;
-    if (fallbackUrl) return fallbackUrl;
-  } catch (err: any) {
     throw new Error(`OpenAI Image Generation Error: ${err.message}`);
   }
 
   throw new Error('OpenAI Image Generation did not return an image.');
 }
+
 
 
 
