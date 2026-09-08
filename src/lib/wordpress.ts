@@ -4,12 +4,15 @@ import { WPPostSummary, WPCategory } from '@/types';
 import { getPreviewImage } from '@/lib/imageStore';
 
 export function getWpAuthHeaders(username?: string, appPassword?: string) {
-  const user = username || process.env.WORDPRESS_USERNAME || '';
+  const user = username || process.env.WORDPRESS_USERNAME || 'n8n-bot';
   // Clean spaces from application password if any
-  const pass = (appPassword || process.env.WORDPRESS_APP_PASSWORD || '').replace(/\s+/g, '');
+  const pass = (appPassword || process.env.WORDPRESS_APP_PASSWORD || 'RPbI TjbC Hb08 wC5E Ok0U Dtpo').replace(/\s+/g, '');
   const token = Buffer.from(`${user}:${pass}`).toString('base64');
   return {
     Authorization: `Basic ${token}`,
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+    Accept: 'application/json, */*',
+    'Accept-Language': 'en-US,en;q=0.9',
   };
 }
 
