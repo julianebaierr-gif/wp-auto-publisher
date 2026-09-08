@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchExistingPosts, uploadImageToWordPress } from '@/lib/wordpress';
 import { generateSeoArticle, generateDalleImage } from '@/lib/openai';
+import { compressImageToDataUri } from '@/lib/imageCompressor';
 
 export const maxDuration = 300;
 
@@ -57,30 +58,53 @@ export async function POST(req: NextRequest) {
     const wpUsername = settings.wpUsername || process.env.WORDPRESS_USERNAME || 'n8n-bot';
     const wpAppPassword = settings.wpAppPassword || process.env.WORDPRESS_APP_PASSWORD || 'RPbI TjbC Hb08 wC5E Ok0U Dtpo';
 
-    console.log(`[Preview Step 4/4] Uploading images to WordPress Media Library directly...`);
-    const [featuredMedia, inArticleMedia] = await Promise.all([
-      uploadImageToWordPress({
-        imageUrl: rawFeaturedImage,
-        filename: `${slug}-featured.png`,
-        title: `${article.title} - Featured Image`,
-        altText: `${trimmedKeyword} - Telegram官方使用与下载指南`,
-        wpUrl,
-        username: wpUsername,
-        appPassword: wpAppPassword,
-      }),
-      uploadImageToWordPress({
-        imageUrl: rawInArticleImage,
-        filename: `${slug}-diagram.png`,
-        title: `${article.title} - 操作流程与安全设置图解`,
-        altText: `${trimmedKeyword} - Telegram核心设置与操作流程`,
-        wpUrl,
-        username: wpUsername,
-        appPassword: wpAppPassword,
-      }),
+    console.log(`[Preview Step 4/4] Optimizing and processing images...`);
+    // Compress both images to lightweight JPEGs (~70-100 KB each)
+    const [compressedFeatured, compressedInArticle] = await Promise.all([
+      compressImageToDataUri(rawFeaturedImage),
+      compressImageToDataUri(rawInArticleImage),
     ]);
 
-    const featuredImageUrl = featuredMedia.sourceUrl;
-    const inArticleImageUrl = inArticleMedia.sourceUrl;
+    let featuredMedia = { id: 0, sourceUrl: compressedFeatured };
+    let inArticleMedia = { id: 0, sourceUrl: compressedInArticle };
+
+    try {
+      console.log(`Attempting upload to WordPress Media Library...`);
+      const [featRes, inArtRes] = await Promise.all([
+        uploadImageToWordPress({
+          imageUrl: compressedFeatured,
+          filename: `${slug}-featured.jpg`,
+          title: `${article.title} - Featured Image`,
+          altText: `${trimmedKeyword} - Telegram官方使用与下载指南`,
+          wpUrl,
+          username: wpUsername,
+          appPassword: wpAppPassword,
+        }).catch((err) => {
+          console.warn('Featured image upload warning:', err.message);
+          return { id: 0, sourceUrl: compressedFeatured };
+        }),
+        uploadImageToWordPress({
+          imageUrl: compressedInArticle,
+          filename: `${slug}-diagram.jpg`,
+          title: `${article.title} - 操作流程与安全设置图解`,
+          altText: `${trimmedKeyword} - Telegram核心设置与操作流程`,
+          wpUrl,
+          username: wpUsername,
+          appPassword: wpAppPassword,
+        }).catch((err) => {
+          console.warn('In-article image upload warning:', err.message);
+          return { id: 0, sourceUrl: compressedInArticle };
+        }),
+      ]);
+
+      if (featRes && featRes.sourceUrl) featuredMedia = featRes;
+      if (inArtRes && inArtRes.sourceUrl) inArticleMedia = inArtRes;
+    } catch (wpUploadErr: any) {
+      console.warn('WordPress media upload skipped due to Cloudflare/WAF:', wpUploadErr.message);
+    }
+
+    const featuredImageUrl = featuredMedia.sourceUrl || compressedFeatured;
+    const inArticleImageUrl = inArticleMedia.sourceUrl || compressedInArticle;
 
     // Construct preview content with in-article image preview
     const inArticleImageHtml = `

@@ -280,7 +280,15 @@ export async function uploadImageToWordPress({
 
   if (!uploadRes.ok) {
     const errBody = await uploadRes.text();
-    throw new Error(`Failed to upload media to WordPress (${uploadRes.status}): ${errBody}`);
+    // If Cloudflare blocked datacenter IP (403 Just a moment challenge)
+    if (uploadRes.status === 403 || errBody.includes('cf_chl_') || errBody.includes('Just a moment')) {
+      console.warn(`[WordPress Upload Notice] Cloudflare challenged media upload (${uploadRes.status}). Using fallback image URL without blocking post publishing.`);
+      return {
+        id: 0,
+        sourceUrl: imageUrl,
+      };
+    }
+    throw new Error(`Failed to upload media to WordPress (${uploadRes.status}): ${errBody.slice(0, 300)}`);
   }
 
   const mediaData = await uploadRes.json();

@@ -65,36 +65,51 @@ export async function POST(req: NextRequest) {
       apiKey: openaiApiKey,
     });
 
-    console.log(`[Step 4/5] Uploading images to WordPress Media Library...`);
+    console.log(`[Step 4/5] Processing and uploading images...`);
     const slug = article.slug || trimmedKeyword.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
-    // Upload featured image
-    const featuredMedia = await uploadImageToWordPress({
-      imageUrl: featuredImageUrl,
-      filename: `${slug}-featured.png`,
-      title: `${article.title} - Featured Image`,
-      altText: `${trimmedKeyword} - Telegram官方使用与下载指南`,
-      wpUrl,
-      username: wpUsername,
-      appPassword: wpAppPassword,
-    });
+    let featuredMedia = { id: 0, sourceUrl: featuredImageUrl };
+    let inArticleMedia = { id: 0, sourceUrl: inArticleImageUrl };
 
-    // Upload in-article image
-    const inArticleMedia = await uploadImageToWordPress({
-      imageUrl: inArticleImageUrl,
-      filename: `${slug}-guide-diagram.png`,
-      title: `${article.title} - 操作流程与安全设置图解`,
-      altText: `${trimmedKeyword} - Telegram核心设置与操作流程`,
-      wpUrl,
-      username: wpUsername,
-      appPassword: wpAppPassword,
-    });
+    try {
+      const [featRes, inArtRes] = await Promise.all([
+        uploadImageToWordPress({
+          imageUrl: featuredImageUrl,
+          filename: `${slug}-featured.jpg`,
+          title: `${article.title} - Featured Image`,
+          altText: `${trimmedKeyword} - Telegram官方使用与下载指南`,
+          wpUrl,
+          username: wpUsername,
+          appPassword: wpAppPassword,
+        }).catch((err) => {
+          console.warn('Featured upload warning:', err.message);
+          return { id: 0, sourceUrl: featuredImageUrl };
+        }),
+        uploadImageToWordPress({
+          imageUrl: inArticleImageUrl,
+          filename: `${slug}-guide-diagram.jpg`,
+          title: `${article.title} - 操作流程与安全设置图解`,
+          altText: `${trimmedKeyword} - Telegram核心设置与操作流程`,
+          wpUrl,
+          username: wpUsername,
+          appPassword: wpAppPassword,
+        }).catch((err) => {
+          console.warn('In-article upload warning:', err.message);
+          return { id: 0, sourceUrl: inArticleImageUrl };
+        }),
+      ]);
+
+      if (featRes && featRes.sourceUrl) featuredMedia = featRes;
+      if (inArtRes && inArtRes.sourceUrl) inArticleMedia = inArtRes;
+    } catch (err: any) {
+      console.warn('Image upload fallback notice:', err.message);
+    }
 
     // Inject in-article image HTML into content replacing placeholder or at midpoint
     const inArticleImageHtml = `
-<figure class="wp-block-image size-large">
-  <img src="${inArticleMedia.sourceUrl}" alt="${trimmedKeyword} - Telegram操作图解" class="wp-image-${inArticleMedia.id}" />
-  <figcaption>${trimmedKeyword} 核心操作与流程图解</figcaption>
+<figure class="wp-block-image size-large my-6">
+  <img src="${inArticleMedia.sourceUrl}" alt="${trimmedKeyword} - Telegram操作图解" class="${inArticleMedia.id ? `wp-image-${inArticleMedia.id}` : ''} rounded-xl shadow-lg border border-slate-700 w-full" />
+  <figcaption class="text-center text-xs text-slate-400 mt-2 italic">${trimmedKeyword} 核心操作与流程图解</figcaption>
 </figure>
 `;
 

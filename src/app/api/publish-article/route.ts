@@ -28,43 +28,53 @@ export async function POST(req: NextRequest) {
     const slug = article.slug || 'trading-article';
 
     // 1. Featured Image: use already uploaded media or upload if needed
-    let featuredMediaId: number | undefined = images?.featured?.id;
+    let featuredMediaId: number | undefined = images?.featured?.id ? Number(images.featured.id) : undefined;
     let featuredMediaSourceUrl: string | undefined = images?.featured?.url;
 
     if (!featuredMediaId && images?.featured?.url) {
       if (images.featured.url.includes('/wp-content/uploads/')) {
         featuredMediaSourceUrl = images.featured.url;
       } else {
-        console.log('Uploading featured image to WordPress media library...');
-        const featuredMedia = await uploadImageToWordPress({
-          imageUrl: images.featured.url,
-          filename: `${slug}-featured.png`,
-          title: `${article.title} - Featured Image`,
-          altText: images.featured.alt || `${article.focusKeyword} - Telegram官方指南`,
-          wpUrl,
-          username: wpUsername,
-          appPassword: wpAppPassword,
-        });
-        featuredMediaId = featuredMedia.id;
-        featuredMediaSourceUrl = featuredMedia.sourceUrl;
+        try {
+          console.log('Uploading featured image to WordPress media library...');
+          const featuredMedia = await uploadImageToWordPress({
+            imageUrl: images.featured.url,
+            filename: `${slug}-featured.jpg`,
+            title: `${article.title} - Featured Image`,
+            altText: images.featured.alt || `${article.focusKeyword} - Telegram官方指南`,
+            wpUrl,
+            username: wpUsername,
+            appPassword: wpAppPassword,
+          });
+          if (featuredMedia.id) featuredMediaId = featuredMedia.id;
+          featuredMediaSourceUrl = featuredMedia.sourceUrl;
+        } catch (featErr: any) {
+          console.warn('Featured image upload skipped:', featErr.message);
+        }
       }
     }
 
     // 2. In-Article Image: check if already in WordPress media library
     let finalContentHtml = article.contentHtml;
     if (!images?.inArticle?.id && images?.inArticle?.url && !images.inArticle.url.includes('/wp-content/uploads/')) {
-      console.log('Uploading in-article image to WordPress media library...');
-      const inArticleMedia = await uploadImageToWordPress({
-        imageUrl: images.inArticle.url,
-        filename: `${slug}-diagram.png`,
-        title: `${article.title} - 操作设置图解`,
-        altText: images.inArticle.alt || `${article.focusKeyword} - Telegram核心设置图解`,
-        wpUrl,
-        username: wpUsername,
-        appPassword: wpAppPassword,
-      });
+      try {
+        console.log('Uploading in-article image to WordPress media library...');
+        const inArticleMedia = await uploadImageToWordPress({
+          imageUrl: images.inArticle.url,
+          filename: `${slug}-diagram.jpg`,
+          title: `${article.title} - 操作设置图解`,
+          altText: images.inArticle.alt || `${article.focusKeyword} - Telegram核心设置图解`,
+          wpUrl,
+          username: wpUsername,
+          appPassword: wpAppPassword,
+        });
 
-      finalContentHtml = finalContentHtml.split(images.inArticle.url).join(inArticleMedia.sourceUrl);
+        if (inArticleMedia.sourceUrl && inArticleMedia.id) {
+          finalContentHtml = finalContentHtml.split(images.inArticle.url).join(inArticleMedia.sourceUrl);
+        }
+      } catch (inArtErr: any) {
+        console.warn('In-article image upload skipped:', inArtErr.message);
+      }
     }
 
     // 3. Publish to WordPress with Yoast SEO Meta & Auto Category
