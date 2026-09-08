@@ -29,50 +29,56 @@ export async function generateSeoArticle({
     url: p.link,
   }));
 
-  const systemPrompt = `You are a world-class financial trading analyst, senior SEO copywriter, and Yoast SEO 100% score optimization expert for tgcenters.com.
-You write engaging, authoritative, highly accurate, and in-depth articles related to stock trading, forex, crypto, technical analysis, candlestick patterns, risk management, and trading strategies.
+  const systemPrompt = `You are an elite financial trading author, senior SEO strategist, and Yoast SEO 100% score optimization master for tgcenters.com.
 
-CRITICAL LANGUAGE & CONTENT REQUIREMENTS:
-1. LANGUAGE: The entire article content (Title, Meta Description, Headings, Paragraphs, FAQs) MUST be written in Simplified Chinese (简体中文).
-2. ARTICLE LENGTH (STRICT): The Chinese text MUST be at least 1000 to 1500 Chinese characters (正文必须写得非常详尽充实，包含原理详解、图表应用步骤、常见误区以及常见问题解答FAQ，字数严格在1000到1500个中文字符之间). Do NOT write short summaries.
-3. SLUG REQUIREMENT: The "slug" MUST BE IN PURE ENGLISH (lowercase, hyphenated, keyword-rich in English, e.g. "rsi-divergence-trading-strategy" or "crypto-scalping-guide"). Do NOT use Chinese characters in the slug.
+CRITICAL CONTENT & LENGTH REQUIREMENTS:
+1. LANGUAGE: Entire article (Title, Meta Description, Headings, Detailed Content, Bullet Points, Comparison Tables, Case Studies, FAQs) MUST be written in Simplified Chinese (简体中文).
+2. ARTICLE LENGTH (STRICT 3000 - 4000 CHINESE CHARACTERS):
+   - You MUST write a comprehensive, exhaustive, deep-dive article containing AT LEAST 3000 TO 4000 CHINESE CHARACTERS (中文正文字数必须严格在3000到4000字之间，内容必须极其充实，包含概念背景、技术指标构造、核心实战买卖法则、多周期图表分析、真实案例演示、止损止盈风控策略、高频交易陷阱以及详尽的FAQ常见问题解答).
+3. ENGLISH SLUG: The "slug" field MUST be in clean, lowercase, hyphenated English matching the keyword (e.g. "macd-trading-strategy-complete-guide"). Strictly NO Chinese characters in the slug.
 
-
-CRITICAL YOAST SEO REQUIREMENTS FOR A PERFECT 100% GREEN SCORE:
-1. FOCUS KEYPHRASE: Use the target keyword as the exact focus keyphrase.
-2. TITLE: Create an irresistible, click-worthy SEO Title in Chinese with the focus keyphrase right at or near the beginning (under 60 characters).
-3. META DESCRIPTION: Write an engaging 130-150 Chinese character meta description including the exact focus keyphrase and a compelling call-to-action.
-4. HEADINGS (H2, H3): Structure with clear <h2> and <h3> tags. Use the focus keyphrase naturally in at least 30-50% of the subheadings.
-5. KEYPHRASE DISTRIBUTION:
-   - Must appear in the FIRST paragraph (first 100 Chinese characters).
-   - Maintain a natural 1.0% to 2.5% keyphrase density throughout the Chinese text.
-   - Concluding section must reinforce the keyphrase.
-6. INTERNAL LINKING:
-   - Naturally embed 2 to 5 contextually relevant internal links to existing website posts from the provided list.
-   - Anchor text MUST be descriptive in Chinese.
+CRITICAL INTERNAL & EXTERNAL LINKING:
+1. INTERNAL LINKS (4 to 5 MANDATORY):
+   - You MUST select and embed EXACTLY 4 to 5 internal links from the provided list of website sitemap URLs into the content.
+   - Embed them naturally in context with descriptive Chinese anchor text.
    - Format: <a href="URL" title="Descriptive Title">相关中文锚文本</a>.
-7. IMAGE PLACEHOLDER: Place an HTML comment <!-- IN_ARTICLE_IMAGE_HERE --> around the 40-50% mark of the content where the second educational chart/diagram image should be inserted.
-8. IMAGE PROMPTS: Generate two highly specific English DALL-E prompts strictly relevant to the keyword topic.
-   - featuredImagePrompt: A photorealistic, ultra-clean financial trading hero banner strictly matching the keyword theme, 4k resolution, cinematic lighting, absolutely NO text/letters on image.
-   - inArticleImagePrompt: A detailed technical trading chart/diagram setup visualizing the specific pattern/concept described in the article, no text.
-9. FORMAT: Return pure JSON conforming strictly to the requested schema. No markdown codeblocks (\`\`\`json). Return valid raw JSON only.`;
+2. EXTERNAL AUTHORITY LINKS (AT LEAST 2 MANDATORY):
+   - You MUST include AT LEAST 2 authoritative external reference links to reputable financial/trading/official websites (such as TradingView, Investopedia, Wikipedia, or SEC/official docs) relevant to the topic.
+   - Format: <a href="https://..." target="_blank" rel="noopener noreferrer">权威参考名称</a>.
+
+CRITICAL IMAGE RELEVANCE (OPENAI DALL-E / GPT-IMAGE):
+- The images MUST be 100% directly related to the specific keyword topic "${keyword}".
+- If the keyword is about MACD, the image must strictly show MACD histogram and crossover lines.
+- If the keyword is about candlestick patterns, show that exact candlestick formation.
+- Do NOT generate generic or unrelated financial scenes.
+- featuredImagePrompt: A photorealistic, high-end 3D financial trading chart visualization specifically showing "${keyword}", cinematic lighting, 4k resolution, absolutely NO text or letters on the image.
+- inArticleImagePrompt: A clean technical analysis chart breakdown specifically demonstrating "${keyword}" entry and exit signals, clear visual candlestick diagram, no text.
+
+FORMAT: Return pure JSON conforming strictly to the requested schema. No markdown codeblocks (\`\`\`json). Return valid raw JSON only.`;
 
   const userPrompt = `Target Focus Keyword: "${keyword}"
 
-Available Existing Website Posts for Internal Linking:
+Available Existing Website Sitemap URLs for Internal Linking (Choose 4 to 5):
 ${JSON.stringify(linkCandidates, null, 2)}
 
-Generate a complete, publication-ready Chinese article (1000-1500 characters) with English slug in JSON format with this exact structure:
+Generate the complete 3000-4000 character in-depth Chinese article in valid JSON format:
 {
-  "title": "中文SEO标题（包含关键词）",
+  "title": "中文SEO标题（包含关键词，吸引点击）",
   "slug": "english-keyword-slug-only",
-  "metaDescription": "中文元描述（包含关键词和行动号召，130-150字）",
+  "metaDescription": "中文元描述（包含关键词，130-150字）",
   "focusKeyword": "${keyword}",
-  "contentHtml": "<h2>...</h2><p>...</p><!-- IN_ARTICLE_IMAGE_HERE --><p>...</p><h3>常见问题解答</h3>...",
-  "featuredImagePrompt": "Strictly keyword-relevant English prompt for DALL-E: photorealistic financial trading hero banner representing ${keyword}, modern digital art, 4k, no text, no watermark",
-  "inArticleImagePrompt": "Strictly keyword-relevant English prompt for DALL-E: technical trading analysis candlestick chart setup illustrating ${keyword}, clean visual diagram, no text, no watermark",
+  "contentHtml": "<h2>...</h2><p>...</p><!-- IN_ARTICLE_IMAGE_HERE --><p>...</p>...",
+  "featuredImagePrompt": "Strictly keyword-specific English prompt for OpenAI image: high-end photorealistic 3D chart visualization specifically focusing on ${keyword}, modern financial theme, 4k, no text, no watermark",
+  "inArticleImagePrompt": "Strictly keyword-specific English prompt for OpenAI image: technical chart diagram explicitly illustrating ${keyword} setup and candlestick patterns, clean analytical style, no text, no watermark",
   "internalLinksUsed": [
-    { "title": "Existing Post Title", "url": "https://tgcenters.com/post-url" }
+    { "title": "Sitemap Page Title", "url": "https://tgcenters.com/..." },
+    { "title": "Sitemap Page Title 2", "url": "https://tgcenters.com/..." },
+    { "title": "Sitemap Page Title 3", "url": "https://tgcenters.com/..." },
+    { "title": "Sitemap Page Title 4", "url": "https://tgcenters.com/..." }
+  ],
+  "externalLinksUsed": [
+    { "title": "Investopedia Reference", "url": "https://www.investopedia.com/..." },
+    { "title": "TradingView Reference", "url": "https://www.tradingview.com/..." }
   ]
 }`;
 
@@ -100,12 +106,12 @@ Generate a complete, publication-ready Chinese article (1000-1500 characters) wi
   const yoastScoreEstimate = {
     keyphraseInTitle: titleClean.includes(kwClean),
     keyphraseInMetaDesc: metaDescClean.includes(kwClean),
-    keyphraseInIntro: contentClean.slice(0, 200).includes(kwClean),
+    keyphraseInIntro: contentClean.slice(0, 300).includes(kwClean),
     keyphraseInSubheadings: (parsed.contentHtml || '').toLowerCase().includes(kwClean),
     internalLinksCount: (parsed.internalLinksUsed || []).length,
+    externalLinksCount: (parsed.externalLinksUsed || []).length,
     wordCount,
   };
-
 
   // Ensure slug is clean english
   let safeSlug = (parsed.slug || '')
@@ -126,8 +132,10 @@ Generate a complete, publication-ready Chinese article (1000-1500 characters) wi
     featuredImagePrompt: parsed.featuredImagePrompt,
     inArticleImagePrompt: parsed.inArticleImagePrompt,
     internalLinksUsed: parsed.internalLinksUsed || [],
+    externalLinksUsed: parsed.externalLinksUsed || [],
     yoastScoreEstimate,
   };
+
 }
 
 /**

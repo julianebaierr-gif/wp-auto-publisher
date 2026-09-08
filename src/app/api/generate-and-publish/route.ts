@@ -14,11 +14,12 @@ export async function POST(req: NextRequest) {
     }
 
     const trimmedKeyword = keyword.trim();
-    const wpUrl = settings.wpUrl || process.env.WORDPRESS_URL || 'https://tradingblogco.com';
-    const wpUsername = settings.wpUsername || process.env.WORDPRESS_USERNAME;
-    const wpAppPassword = settings.wpAppPassword || process.env.WORDPRESS_APP_PASSWORD;
+    const wpUrl = settings.wpUrl || process.env.WORDPRESS_URL || 'https://tgcenters.com';
+    const wpUsername = settings.wpUsername || process.env.WORDPRESS_USERNAME || 'n8n-bot';
+    const wpAppPassword = settings.wpAppPassword || process.env.WORDPRESS_APP_PASSWORD || 'RPbI TjbC Hb08 wC5E Ok0U Dtpo';
     const openaiApiKey = settings.openaiApiKey || process.env.OPENAI_API_KEY;
-    const publishStatus = settings.publishStatus || (process.env.WORDPRESS_DEFAULT_STATUS as 'publish' | 'draft') || 'publish';
+    const publishStatus = settings.publishStatus || (process.env.WORDPRESS_DEFAULT_STATUS as 'publish' | 'draft') || 'draft';
+
 
     if (!openaiApiKey) {
       return NextResponse.json(

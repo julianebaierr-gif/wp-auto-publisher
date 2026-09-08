@@ -178,12 +178,20 @@ export default function Home() {
         }),
       });
 
-      const data = await res.json();
+      const text = await res.text();
+      let data: any = {};
+      try {
+        data = JSON.parse(text);
+      } catch (jsonErr) {
+        throw new Error(`Server returned unexpected response: ${text.slice(0, 120)}`);
+      }
+
       if (!res.ok || data.error) {
         throw new Error(data.error || 'Failed to publish to WordPress');
       }
 
       setPublishedResult(data);
+
     } catch (err: any) {
       setErrorMessage(err.message || 'Error publishing article');
     } finally {
@@ -595,13 +603,19 @@ export default function Home() {
                         <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
                           <span className="text-slate-300">Chinese Content Length</span>
                           <span className="text-emerald-400 font-bold">
-                            {previewData.article.yoastScoreEstimate?.wordCount || 1200} Characters (1000-1500 字)
+                            {previewData.article.yoastScoreEstimate?.wordCount || 3200} Characters (3000-4000 字)
                           </span>
                         </div>
 
+                        <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
+                          <span className="text-slate-300">External Authority Links</span>
+                          <span className="text-emerald-400 font-bold">
+                            {previewData.article.externalLinksUsed?.length || 2} Authority Links
+                          </span>
+                        </div>
 
                         <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
-                          <span className="text-slate-300">DALL-E 3 Images with Alt Tags</span>
+                          <span className="text-slate-300">OpenAI Images with Alt Tags</span>
                           <span className="text-emerald-400 font-bold">
                             2 Images Ready
                           </span>
@@ -611,21 +625,43 @@ export default function Home() {
                       {/* Injected Internal Links List */}
                       {previewData.article.internalLinksUsed?.length > 0 && (
                         <div className="mt-4 pt-3 border-t border-slate-800">
-                          <h5 className="text-[11px] font-semibold uppercase text-slate-400 mb-2">
-                            Linked Existing Articles:
+                          <h5 className="text-[11px] font-semibold uppercase text-emerald-400 mb-2 flex items-center justify-between">
+                            <span>Sitemap Internal Links ({previewData.article.internalLinksUsed.length}):</span>
+                            <span className="text-[10px] text-slate-500">4-5 Injected</span>
                           </h5>
                           <ul className="space-y-1.5 text-[11px]">
                             {previewData.article.internalLinksUsed.map((link: any, i: number) => (
                               <li key={i} className="text-slate-300 truncate flex items-center gap-1.5">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
                                 <a href={link.url} target="_blank" rel="noreferrer" className="hover:text-emerald-400 underline truncate">
-                                  {link.title}
+                                  {link.title || link.url}
                                 </a>
                               </li>
                             ))}
                           </ul>
                         </div>
                       )}
+
+                      {/* Injected External Links List */}
+                      {previewData.article.externalLinksUsed?.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-slate-800">
+                          <h5 className="text-[11px] font-semibold uppercase text-teal-400 mb-2 flex items-center justify-between">
+                            <span>Authority External Links ({previewData.article.externalLinksUsed.length}):</span>
+                            <span className="text-[10px] text-slate-500">Official / Authority</span>
+                          </h5>
+                          <ul className="space-y-1.5 text-[11px]">
+                            {previewData.article.externalLinksUsed.map((link: any, i: number) => (
+                              <li key={i} className="text-slate-300 truncate flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-teal-400 shrink-0"></span>
+                                <a href={link.url} target="_blank" rel="noreferrer" className="hover:text-teal-300 underline truncate">
+                                  {link.title || link.url}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
                     </div>
                   </div>
                 </div>

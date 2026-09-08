@@ -17,40 +17,79 @@ export function getWpBaseUrl(wpUrl?: string): string {
 
 
 /**
- * Fetch existing posts from WordPress for internal linking context
+ * Fetch all existing URLs from post-sitemap.xml and page-sitemap.xml for accurate internal linking
  */
 export async function fetchExistingPosts(wpUrl?: string): Promise<WPPostSummary[]> {
-  try {
-    const baseUrl = getWpBaseUrl(wpUrl);
-    // Fetch up to 100 recent posts
-    const endpoint = `${baseUrl}/wp-json/wp/v2/posts?per_page=100&_fields=id,title,link,slug&status=publish`;
-    const res = await fetch(endpoint, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-      next: { revalidate: 60 },
-    });
+  const baseUrl = getWpBaseUrl(wpUrl);
+  const results: WPPostSummary[] = [];
+  const seenUrls = new Set<string>();
 
-    if (!res.ok) {
-      console.warn(`Failed to fetch existing posts: ${res.status} ${res.statusText}`);
-      return [];
+  const sitemaps = [
+    `${baseUrl}/post-sitemap.xml`,
+    `${baseUrl}/page-sitemap.xml`,
+  ];
+
+  for (const sitemapUrl of sitemaps) {
+    try {
+      console.log(`Scanning sitemap: ${sitemapUrl}`);
+      const res = await fetch(sitemapUrl, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+        cache: 'no-store',
+      });
+
+      if (res.ok) {
+        const xml = await res.text();
+        const locMatches = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)];
+
+        for (const m of locMatches) {
+          const link = m[1].trim();
+          if (!seenUrls.has(link) && !link.endsWith('.xml') && link !== `${baseUrl}/`) {
+            seenUrls.add(link);
+            const slug = link.replace(baseUrl, '').replace(/^\/|\/$/g, '');
+            // Create readable title from slug
+            const title = slug
+              .split(/[-_]/)
+              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+              .join(' ');
+
+            results.push({
+              id: results.length + 1,
+              title: title || slug,
+              link,
+              slug,
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn(`Could not read sitemap ${sitemapUrl}:`, err);
     }
-
-    const data = await res.json();
-    if (!Array.isArray(data)) return [];
-
-    return data.map((item: any) => ({
-      id: item.id,
-      title: item.title?.rendered || item.slug,
-      link: item.link || `${baseUrl}/${item.slug}`,
-      slug: item.slug,
-    }));
-  } catch (error) {
-    console.error('Error fetching existing WP posts:', error);
-    return [];
   }
+
+  // Also query REST API to get exact post titles if available
+  try {
+    const res = await fetch(`${baseUrl}/wp-json/wp/v2/posts?per_page=50&status=publish`, {
+      cache: 'no-store',
+    });
+    if (res.ok) {
+      const posts = await res.json();
+      if (Array.isArray(posts)) {
+        for (const p of posts) {
+          const item = results.find((r) => r.slug === p.slug || r.link === p.link);
+          if (item) {
+            item.title = (p.title?.rendered || item.title).replace(/<[^>]*>/g, '');
+          }
+        }
+      }
+    }
+  } catch (e) {
+    // Ignore
+  }
+
+  console.log(`Loaded ${results.length} URLs from XML sitemaps for internal linking.`);
+  return results;
 }
+
 
 /**
  * Upload an image (buffer or external URL) to WordPress Media Library

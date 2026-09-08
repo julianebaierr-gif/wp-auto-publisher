@@ -12,10 +12,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Article data is required to publish' }, { status: 400 });
     }
 
-    const wpUrl = settings.wpUrl || process.env.WORDPRESS_URL || 'https://tradingblogco.com';
-    const wpUsername = settings.wpUsername || process.env.WORDPRESS_USERNAME;
-    const wpAppPassword = settings.wpAppPassword || process.env.WORDPRESS_APP_PASSWORD;
-    const publishStatus = settings.publishStatus || (process.env.WORDPRESS_DEFAULT_STATUS as 'publish' | 'draft') || 'publish';
+    const wpUrl = settings.wpUrl || process.env.WORDPRESS_URL || 'https://tgcenters.com';
+    const wpUsername = settings.wpUsername || process.env.WORDPRESS_USERNAME || 'n8n-bot';
+    const wpAppPassword = settings.wpAppPassword || process.env.WORDPRESS_APP_PASSWORD || 'RPbI TjbC Hb08 wC5E Ok0U Dtpo';
+    const publishStatus = settings.publishStatus || (process.env.WORDPRESS_DEFAULT_STATUS as 'publish' | 'draft') || 'draft';
+
 
     if (!wpUsername || !wpAppPassword) {
       return NextResponse.json(

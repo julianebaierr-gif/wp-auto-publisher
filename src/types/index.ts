@@ -28,14 +28,17 @@ export interface GeneratedArticle {
   featuredImagePrompt: string;
   inArticleImagePrompt: string;
   internalLinksUsed: { title: string; url: string }[];
+  externalLinksUsed: { title: string; url: string }[];
   yoastScoreEstimate: {
     keyphraseInTitle: boolean;
     keyphraseInMetaDesc: boolean;
     keyphraseInIntro: boolean;
     keyphraseInSubheadings: boolean;
     internalLinksCount: number;
+    externalLinksCount: number;
     wordCount: number;
   };
+
 }
 
 export interface GenerationProgress {

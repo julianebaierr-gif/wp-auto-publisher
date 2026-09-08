@@ -14,8 +14,9 @@ export async function POST(req: NextRequest) {
     }
 
     const trimmedKeyword = keyword.trim();
-    const wpUrl = settings.wpUrl || process.env.WORDPRESS_URL || 'https://tradingblogco.com';
+    const wpUrl = settings.wpUrl || process.env.WORDPRESS_URL || 'https://tgcenters.com';
     const openaiApiKey = settings.openaiApiKey || process.env.OPENAI_API_KEY;
+
 
     if (!openaiApiKey) {
       return NextResponse.json(
