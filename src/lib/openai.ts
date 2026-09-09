@@ -116,6 +116,7 @@ CRITICAL EDITORIAL & SEO REQUIREMENTS (GOOGLE 2026 HELPFUL CONTENT & EEAT COMPLI
 FORMAT: Return valid raw JSON only.`;
 
   const userPrompt = `Target Focus Keyword: "${keyword}" (Must be 100% relevant to this keyword, zero generic repeated topics like MTProto or SMS verification unless requested, 10,000+ Chinese characters, spaces around keyword " ${keyword} " without brackets!)
+CRITICAL: NEVER output placeholder dots ("..." or "……") in paragraphs or headings. Every sentence must be complete and grammatically finished with proper Chinese punctuation (。 or ！).
 
 Available tgcenters.com Sitemap Pages for Context & Internal Linking:
 ${JSON.stringify(linkCandidates, null, 2)}
@@ -128,8 +129,8 @@ Generate the complete 10,000+ Chinese character exhaustive guide in JSON format:
   "focusKeyword": "${keyword}",
   "semanticKeywordsUsed": ["Telegram中文版", "电报设置", "验证码", "隐私保护", "双重认证", "频道订阅"],
   "outline": [
-    { "level": "h2", "heading": "自然段落标题（无数字，无链接）", "estimatedCharacters": 1000, "description": "深入阐述..." },
-    { "level": "h3", "heading": "自然子标题", "estimatedCharacters": 800, "description": "详细解析..." }
+    { "level": "h2", "heading": "自然段落标题（无数字，无链接）", "estimatedCharacters": 1000, "description": "深入阐述核心操作" },
+    { "level": "h3", "heading": "自然子标题", "estimatedCharacters": 800, "description": "详细解析实用方法" }
   ],
   "faqItems": [
     { "question": "常见问题1？", "answer": "简明扼要的答案（50-100字）" },
@@ -138,7 +139,7 @@ Generate the complete 10,000+ Chinese character exhaustive guide in JSON format:
     { "question": "常见问题4？", "answer": "简明扼要的答案（50-100字）" },
     { "question": "常见问题5？", "answer": "简明扼要的答案（50-100字）" }
   ],
-  "contentHtml": "<h2>...</h2><p>对于关注 ${keyword} 的用户而言，...</p><!-- IN_ARTICLE_IMAGE_HERE --><h2>...</h2><p>...</p>",
+  "contentHtml": "<h2>核心操作全流程指南</h2><p>对于关注 ${keyword} 的用户而言，掌握正版客户端的安装与设置至关重要。</p><!-- IN_ARTICLE_IMAGE_HERE --><h2>进阶使用与安全配置</h2><p>为了进一步提升账户安全，用户应当合理开启相关防护措施。</p>",
   "featuredImagePrompt": "English prompt tailored specifically for ${keyword} with modern 3D tech concept, sleek smartphone UI, clean aesthetic, no text, no watermark",
   "inArticleImagePrompt": "English prompt tailored specifically for ${keyword} technical workflow illustration, modern digital app mockup, clean style, no text, no watermark",
   "internalLinksUsed": [
@@ -645,6 +646,25 @@ Return valid JSON:
       finalContentHtml = finalContentHtml.slice(0, firstPOpen) + firstP + restContent;
     }
   }
+
+  // CLEAN ACCIDENTAL ELLIPSES / DOT PLACEHOLDERS ("..." or "……" or ". . .")
+  // Clean dots inside paragraphs
+  finalContentHtml = finalContentHtml.replace(/(<p[^>]*>)([\s\S]*?)(<\/p>)/gi, (_fullP: string, pOpen: string, pText: string, pClose: string) => {
+    let cleanText = pText
+      // Remove trailing ellipses at end of sentence or paragraph
+      .replace(/([。！？；，])\s*(\.{2,}|…+|……)/g, '$1')
+      .replace(/(\.{2,}|…+|……)\s*([。！？；，])/g, '$2')
+      .replace(/(\.{2,}|…+|……)\s*$/g, '')
+      .replace(/\s+(\.{2,}|…+|……)\s+/g, ' ')
+      .trim();
+    return `${pOpen}${cleanText}${pClose}`;
+  });
+
+  // Clean dots in headings
+  finalContentHtml = finalContentHtml.replace(/(<h[2-4][^>]*>)([\s\S]*?)(<\/h[2-4]>)/gi, (_fullH: string, hOpen: string, hText: string, hClose: string) => {
+    let cleanH = hText.replace(/(\.{2,}|…+|……)/g, '').trim();
+    return `${hOpen}${cleanH}${hClose}`;
+  });
 
   // Auto-determine best category
   const selectedCategory = autoDetermineCategory(keyword, safeTitle, categories);
