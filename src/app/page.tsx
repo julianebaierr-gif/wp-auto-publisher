@@ -436,7 +436,7 @@ export default function Home() {
 
   const handleTriggerCronNow = async () => {
     setIsCronRunningNow(true);
-    setSheetMessage(null);
+    setSheetMessage('⏳ Running publisher: checking sheet and generating article...');
     try {
       const res = await fetch('/api/cron-sheet-publisher', {
         method: 'POST',
@@ -446,7 +446,133 @@ export default function Home() {
           ...settings,
         }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      
+      // If Vercel IP was blocked by Cloudflare (403), seamlessly publish directly from the user's browser!
+      if (!res.ok && (data.error?.includes('403') || data.error?.includes('Just a moment') || data.error?.includes('Cloudflare'))) {
+        setSheetMessage('⚡ Server IP blocked by Cloudflare (403). Switching to Direct Browser Publisher...');
+        
+        // 1. Fetch the pending sheet row
+        const syncRes = await fetch(`/api/sheet-sync?sheetId=${encodeURIComponent(sheetUrl || '')}`);
+        const syncData = await syncRes.json();
+        const pendingRow = syncData?.rows?.find((r: any) => r.status.toLowerCase() === 'pending');
+        
+        if (!pendingRow) {
+          throw new Error('No pending keywords found in Google Sheet.');
+        }
+
+        setSheetMessage(`🤖 Generating complete SEO article & images for: "${pendingRow.keyword}"...`);
+        
+        // 2. Generate article content and images via OpenAI
+        const genRes = await fetch('/api/generate-preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            keyword: pendingRow.keyword,
+            settings,
+          }),
+        });
+
+        if (!genRes.ok) {
+          const genErr = await genRes.json().catch(() => ({ error: 'Generation failed' }));
+          throw new Error(genErr.error || 'Failed to generate article preview');
+        }
+
+        const genData = await genRes.json();
+        const article = genData.article;
+        const images = genData.images;
+
+        setSheetMessage(`🚀 Uploading images and publishing to WordPress directly from browser...`);
+
+        const wpUrl = (settings.wpUrl || 'https://tgcenters.com').replace(/\/+$/, '');
+        const wpUser = settings.wpUsername || 'n8n-bot';
+        const wpPass = (settings.wpAppPassword || 'RPbI TjbC Hb08 wC5E Ok0U Dtpo').replace(/\s+/g, '');
+        const token = btoa(`${wpUser}:${wpPass}`);
+
+        let featuredId = images?.featured?.id ? Number(images.featured.id) : 0;
+        let postContentHtml = article.contentHtml;
+
+        // Upload featured image directly from browser if needed
+        if (featuredId === 0 && images?.featured?.url) {
+          try {
+            const featBlob = await fetch(images.featured.url).then(r => r.blob());
+            const featUploadRes = await fetch(`${wpUrl}/wp-json/wp/v2/media`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Basic ${token}`,
+                'Content-Disposition': `attachment; filename="${article.slug || 'featured'}-featured.jpg"`,
+                'Content-Type': featBlob.type || 'image/jpeg',
+              },
+              body: featBlob,
+            });
+            if (featUploadRes.ok) {
+              const featData = await featUploadRes.json();
+              if (featData.id) featuredId = featData.id;
+            }
+          } catch (uploadFeatErr) {
+            console.warn('[Direct Browser Sheet Publish] Featured image upload notice:', uploadFeatErr);
+          }
+        }
+
+        // Upload in-article image directly from browser if needed
+        if (images?.inArticle?.url && !images.inArticle.url.includes('/wp-content/uploads/')) {
+          try {
+            const inArtBlob = await fetch(images.inArticle.url).then(r => r.blob());
+            const inArtRes = await fetch(`${wpUrl}/wp-json/wp/v2/media`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Basic ${token}`,
+                'Content-Disposition': `attachment; filename="${article.slug || 'diagram'}-diagram.jpg"`,
+                'Content-Type': inArtBlob.type || 'image/jpeg',
+              },
+              body: inArtBlob,
+            });
+            if (inArtRes.ok) {
+              const inArtData = await inArtRes.json();
+              if (inArtData.source_url) {
+                postContentHtml = postContentHtml.split(images.inArticle.url).join(inArtData.source_url);
+              }
+            }
+          } catch (inArtUploadErr) {
+            console.warn('[Direct Browser Sheet Publish] In-article image upload notice:', inArtUploadErr);
+          }
+        }
+
+        const payload: any = {
+          title: article.title,
+          slug: article.slug,
+          content: postContentHtml,
+          status: 'publish',
+          meta: {
+            _yoast_wpseo_focuskw: article.focusKeyword,
+            _yoast_wpseo_metadesc: article.metaDescription,
+            _yoast_wpseo_title: article.title,
+          },
+        };
+
+        if (featuredId > 0) payload.featured_media = featuredId;
+        if (article.category?.id) payload.categories = [article.category.id];
+
+        const directWpRes = await fetch(`${wpUrl}/wp-json/wp/v2/posts`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!directWpRes.ok) {
+          const directErr = await directWpRes.text();
+          throw new Error(`WordPress Post Publication failed (${directWpRes.status}): ${directErr.slice(0, 150)}`);
+        }
+
+        const directPost = await directWpRes.json();
+        setSheetMessage(`🎉 Successfully published "${pendingRow.keyword}" directly to WordPress! Post URL: ${directPost.link}`);
+        handleFetchSheet();
+        return;
+      }
+
       if (!res.ok || data.error) {
         throw new Error(data.error || 'Publisher failed');
       }
