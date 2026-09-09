@@ -22,12 +22,14 @@ import {
   Edit3,
   XCircle,
   Calendar,
-  Clock
+  Clock,
+  Table2,
+  Play
 } from 'lucide-react';
 import { GenerationSettings } from '@/types';
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'publish' | 'bulk' | 'settings'>('publish');
+  const [activeTab, setActiveTab] = useState<'publish' | 'bulk' | 'sheet' | 'settings'>('publish');
   
   // Single generation / preview state
   const [keyword, setKeyword] = useState('');
@@ -41,6 +43,13 @@ export default function Home() {
   // Single article schedule state
   const [singleScheduleType, setSingleScheduleType] = useState<'now' | '8hours' | 'custom'>('now');
   const [customScheduleDate, setCustomScheduleDate] = useState<string>('');
+
+  // Google Sheet Sync State
+  const [sheetUrl, setSheetUrl] = useState<string>('https://docs.google.com/spreadsheets/d/1aZ7i0sZ83-gBK7zdLfjZQM-UnqUV_xFtIgv65QuGgRc/edit?gid=0#gid=0');
+  const [sheetRows, setSheetRows] = useState<any[]>([]);
+  const [isLoadingSheet, setIsLoadingSheet] = useState<boolean>(false);
+  const [isCronRunningNow, setIsCronRunningNow] = useState<boolean>(false);
+  const [sheetMessage, setSheetMessage] = useState<string | null>(null);
 
   // Bulk generation state
   const [bulkKeywords, setBulkKeywords] = useState('');
@@ -405,6 +414,45 @@ export default function Home() {
     setIsBulkRunning(false);
   };
 
+  // Google Sheet Functions
+  const handleFetchSheet = async () => {
+    if (!sheetUrl.trim()) return;
+    setIsLoadingSheet(true);
+    setSheetMessage(null);
+    try {
+      const res = await fetch(`/api/sheet-sync?sheetId=${encodeURIComponent(sheetUrl)}`);
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to read Google Sheet');
+      }
+      setSheetRows(data.rows || []);
+      setSheetMessage(`Successfully synced ${data.totalRows} keywords (${data.pendingCount} pending).`);
+    } catch (err: any) {
+      setSheetMessage(`Error: ${err.message}`);
+    } finally {
+      setIsLoadingSheet(false);
+    }
+  };
+
+  const handleTriggerCronNow = async () => {
+    setIsCronRunningNow(true);
+    setSheetMessage(null);
+    try {
+      const res = await fetch('/api/cron-sheet-publisher');
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Cron run failed');
+      }
+      setSheetMessage(`✅ ${data.message || 'Published successfully!'} Post URL: ${data.postUrl || ''}`);
+      // Refresh sheet rows
+      handleFetchSheet();
+    } catch (err: any) {
+      setSheetMessage(`❌ Error running publisher: ${err.message}`);
+    } finally {
+      setIsCronRunningNow(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-emerald-500 selection:text-white">
       {/* Top Navbar */}
@@ -459,6 +507,20 @@ export default function Home() {
             >
               <Layers className="w-4 h-4" />
               Bulk Queue
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('sheet');
+                handleFetchSheet();
+              }}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md font-medium transition-all cursor-pointer ${
+                activeTab === 'sheet'
+                  ? 'bg-emerald-500 text-slate-950 shadow'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Table2 className="w-4 h-4" />
+              Google Sheet Auto (8h)
             </button>
             <button
               onClick={() => setActiveTab('settings')}
@@ -1163,7 +1225,179 @@ export default function Home() {
           </div>
         )}
 
-        {/* TAB 3: Settings & API Credentials */}
+        {/* TAB 3: Google Sheet Auto-Publisher (8h Cron) */}
+        {activeTab === 'sheet' && (
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                <div>
+                  <h2 className="text-xl font-semibold flex items-center gap-2 text-slate-100">
+                    <Table2 className="w-5 h-5 text-emerald-400" />
+                    Google Sheet 自动化发帖排期 (Auto 8-Hour Cron)
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    系统将从 Google Sheet 表格中自动读取 <b>Pending</b> 状态的关键词，每 8 小时自动生成 10,000+ 字长文并发布到 WordPress。
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleFetchSheet}
+                    disabled={isLoadingSheet}
+                    className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3.5 py-2 rounded-xl border border-slate-700 transition cursor-pointer"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isLoadingSheet ? 'animate-spin' : ''}`} />
+                    刷新表格数据 (Sync)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleTriggerCronNow}
+                    disabled={isCronRunningNow}
+                    className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-bold text-xs px-4 py-2 rounded-xl shadow-lg shadow-emerald-500/20 transition cursor-pointer disabled:opacity-50"
+                  >
+                    {isCronRunningNow ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        正在生成并发布...
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                        立即测试触发 1 篇 (Run 1 Post Now)
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Sheet URL input */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                  <span>Google Sheet 在线表格地址 (Spreadsheet URL):</span>
+                  <a
+                    href={sheetUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-emerald-400 hover:underline flex items-center gap-1 text-[11px]"
+                  >
+                    打开我的表格 (Open Sheet) <ExternalLink className="w-3 h-3" />
+                  </a>
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={sheetUrl}
+                    onChange={(e) => setSheetUrl(e.target.value)}
+                    placeholder="https://docs.google.com/spreadsheets/d/..."
+                    className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleFetchSheet}
+                    className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold border border-slate-700 cursor-pointer"
+                  >
+                    载入
+                  </button>
+                </div>
+              </div>
+
+              {/* Message notice */}
+              {sheetMessage && (
+                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{sheetMessage}</span>
+                </div>
+              )}
+
+              {/* Cron info badge */}
+              <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/20 flex items-start gap-3 text-xs">
+                <Clock className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-emerald-300">
+                    Vercel 自动化定时任务已就绪 (Schedule: 每 8 小时触发 1 次)
+                  </p>
+                  <p className="text-slate-400 leading-relaxed">
+                    Cron 路由: <code className="text-emerald-400 bg-slate-950 px-1.5 py-0.5 rounded">/api/cron-sheet-publisher</code>。每隔 8 小时，Vercel 云端将自动执行该任务，无需开机、无需保持网页打开！
+                  </p>
+                </div>
+              </div>
+
+              {/* Sheet Rows Table Preview */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                    表格关键词列表 ({sheetRows.length} 条记录)
+                  </h3>
+                  <span className="text-[11px] text-slate-400">
+                    待发布: <b className="text-amber-400">{sheetRows.filter(r => r.status.toLowerCase() === 'pending').length}</b> | 已发布: <b className="text-emerald-400">{sheetRows.filter(r => r.status.toLowerCase() !== 'pending').length}</b>
+                  </span>
+                </div>
+
+                {isLoadingSheet ? (
+                  <div className="text-center py-10 text-slate-400 text-xs flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                    正在同步 Google Sheet 关键词...
+                  </div>
+                ) : sheetRows.length === 0 ? (
+                  <div className="text-center py-8 rounded-xl bg-slate-950/60 border border-slate-800 text-slate-400 text-xs">
+                    暂未检测到关键词数据。请确保表格第一行为表头（Keyword, Status, Post URL），且共享设置为“知道链接的任何人可查看”。
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto rounded-xl border border-slate-800">
+                    <table className="w-full text-left text-xs text-slate-300">
+                      <thead className="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                        <tr>
+                          <th className="py-3 px-4 w-16">行号</th>
+                          <th className="py-3 px-4">Focus Keyword (关键词)</th>
+                          <th className="py-3 px-4 w-32">Status (状态)</th>
+                          <th className="py-3 px-4">Post URL (文章链接)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 bg-slate-900/50 font-mono">
+                        {sheetRows.map((row, idx) => {
+                          const isPending = row.status.toLowerCase() === 'pending';
+                          return (
+                            <tr key={idx} className="hover:bg-slate-800/40 transition">
+                              <td className="py-2.5 px-4 text-slate-500">#{row.rowIndex}</td>
+                              <td className="py-2.5 px-4 font-sans font-medium text-slate-200">{row.keyword}</td>
+                              <td className="py-2.5 px-4">
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[11px] font-semibold uppercase ${
+                                    isPending
+                                      ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
+                                      : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                  }`}
+                                >
+                                  {row.status || 'Pending'}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-4 text-[11px] truncate max-w-xs">
+                                {row.postUrl ? (
+                                  <a
+                                    href={row.postUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-emerald-400 hover:underline flex items-center gap-1"
+                                  >
+                                    {row.postUrl} <ExternalLink className="w-3 h-3 shrink-0" />
+                                  </a>
+                                ) : (
+                                  <span className="text-slate-600">- 等待定时任务发布 -</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: Settings & API Credentials */}
         {activeTab === 'settings' && (
           <div className="max-w-2xl mx-auto space-y-6">
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
