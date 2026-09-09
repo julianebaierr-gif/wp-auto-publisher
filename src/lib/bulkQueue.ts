@@ -82,7 +82,7 @@ async function runBackgroundWorker() {
   } finally { isWorkerActive = false; }
 }
 
-async function processSingleBulkArticle(keyword: string, scheduleDate: string | undefined, settings: any = {}) {
+export async function processSingleBulkArticle(keyword: string, scheduleDate: string | undefined, settings: any = {}) {
   const trimmedKeyword = keyword.trim();
   const wpUrl = settings.wpUrl || process.env.WORDPRESS_URL || 'https://tgcenters.com';
   const wpUsername = settings.wpUsername || process.env.WORDPRESS_USERNAME || 'n8n-bot';

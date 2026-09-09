@@ -438,10 +438,17 @@ export default function Home() {
     setIsCronRunningNow(true);
     setSheetMessage(null);
     try {
-      const res = await fetch('/api/cron-sheet-publisher');
+      const res = await fetch('/api/cron-sheet-publisher', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sheetId: sheetUrl,
+          ...settings,
+        }),
+      });
       const data = await res.json();
       if (!res.ok || data.error) {
-        throw new Error(data.error || 'Cron run failed');
+        throw new Error(data.error || 'Publisher failed');
       }
       setSheetMessage(`✅ ${data.message || 'Published successfully!'} Post URL: ${data.postUrl || ''}`);
       // Refresh sheet rows
